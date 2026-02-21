@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JLPT N2 실전 모의고사</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Pretendard:wght@500;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 뒤로가기 버튼 스타일 --- */
+        .back-link {
+            display: inline-block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #991b1b; 
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-family: 'Pretendard', sans-serif;
+            font-weight: bold;
+            transition: 0.3s;
+            text-align: center;
+        }
+        .back-link:hover { background-color: #ef4444; transform: translateY(-2px); }
+        .top-bar { text-align: center; background-color: #fef2f2; padding-top: 10px; }
+
+        /* --- 기존 수훈님 CSS 코드 --- */
+        body { background-color: #fef2f2; margin: 0; padding: 0; }
+
+        /* 메인 컨테이너 */
+        .mock-test-container {
+            font-family: 'Pretendard', 'Noto Sans JP', sans-serif;
+            max-width: 800px; margin: 0 auto 40px auto;
+            background: #fff; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb; overflow: hidden;
+            height: 750px; display: flex; flex-direction: column;
+            position: relative; 
+        }
+        
+        /* 폭죽 캔버스 */
+        #confetti-canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 999; display: none;
+        }
+
+        /* 화면 공통 */
+        .screen { 
+            display: none; padding: 30px; flex-grow: 1; flex-direction: column; 
+            align-items: center; overflow-y: auto; height: 100%;
+            scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;
+        }
+        .screen.active { display: flex; }
+        .screen::-webkit-scrollbar { width: 6px; }
+        .screen::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+
+        /* 1. 시작 화면 */
+        #start-screen { text-align: center; background: #fef2f2; justify-content: center; }
+        .start-title { font-size: 2.6rem; color: #991b1b; margin-bottom: 15px; font-weight: 900; }
+        .start-desc { font-size: 1.4rem; color: #4b5563; margin-bottom: 40px; line-height: 1.6; }
+        
+        .course-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 100%; max-width: 600px; }
+        .course-btn {
+            background: white; border: 2px solid #fecaca; padding: 20px 10px; border-radius: 15px;
+            cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px;
+            box-shadow: 0 4px 0 #fecaca;
+        }
+        .course-btn:hover { transform: translateY(-3px); border-color: #ef4444; color: #ef4444; }
+        .course-btn:active { transform: translateY(2px); box-shadow: none; }
+        .c-icon { font-size: 2rem; }
+        .c-title { font-size: 1.4rem; font-weight: 800; color: #1f2937; }
+        .c-time { font-size: 1rem; color: #6b7280; font-weight: 600; }
+
+        /* 2. 문제 화면 */
+        #quiz-screen { align-items: flex-start; justify-content: flex-start; padding-top: 20px; }
+        
+        /* 진행바 스타일 */
+        .progress-container {
+            width: 100%; height: 8px; background-color: #e5e7eb; border-radius: 4px;
+            margin-bottom: 20px; overflow: hidden; flex-shrink: 0;
+        }
+        .progress-bar {
+            height: 100%; background: linear-gradient(90deg, #ef4444, #f87171);
+            width: 0%; transition: width 0.3s ease; border-radius: 4px;
+        }
+
+        .quiz-header { width: 100%; display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 15px; flex-shrink: 0; }
+        .q-badge { background: #ef4444; color: white; padding: 6px 14px; border-radius: 8px; font-size: 1.1rem; font-weight: bold; }
+        .timer { font-size: 1.4rem; font-weight: 800; color: #ef4444; background: #fee2e2; padding: 5px 15px; border-radius: 8px; }
+        
+        .question-box { width: 100%; margin-bottom: 25px; flex-shrink: 0; }
+        .q-text { font-size: 1.7rem; font-weight: bold; color: #1f2937; margin-bottom: 20px; line-height: 1.5; }
+        .q-context { background: #f8fafc; padding: 20px; border-left: 5px solid #94a3b8; color: #334155; margin-bottom: 25px; font-size: 1.3rem; line-height: 1.7; border-radius: 0 8px 8px 0; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 15px; width: 100%; padding-bottom: 30px; }
+        .option-btn {
+            background: white; border: 2px solid #e5e7eb; padding: 18px; border-radius: 14px;
+            text-align: left; font-size: 1.35rem; color: #4b5563; cursor: pointer; transition: all 0.2s; font-weight: 600; line-height: 1.4;
+        }
+        .option-btn:hover { border-color: #ef4444; color: #ef4444; background: #fef2f2; }
+        
+        /* 3. 결과 화면 */
+        #result-screen { justify-content: flex-start; }
+        .score-area { 
+            text-align: center; margin-bottom: 30px; padding-bottom: 20px; 
+            border-bottom: 2px dashed #e5e7eb; width: 100%; flex-shrink: 0; position: relative;
+        }
+        
+        /* 합격 도장 스타일 */
+        .stamp {
+            position: absolute; top: 10px; right: 20px;
+            font-size: 4rem; font-weight: 900; border: 6px solid; padding: 10px 20px;
+            border-radius: 10px; opacity: 0; transform: scale(3) rotate(-15deg);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none;
+        }
+        .stamp.pass { color: #dc2626; border-color: #dc2626; opacity: 0.2; } 
+        .stamp.fail { color: #6b7280; border-color: #6b7280; opacity: 0.2; } 
+        .stamp.show { opacity: 0.8; transform: scale(1) rotate(-15deg); }
+
+        .score-title { font-size: 1.6rem; color: #374151; font-weight: bold; }
+        .final-score { font-size: 3.5rem; font-weight: 900; color: #ef4444; }
+        
+        /* 분석 테이블 스타일 */
+        .analysis-box { width: 100%; background: #f9fafb; border-radius: 12px; padding: 15px; margin-bottom: 20px; }
+        .analysis-table { width: 100%; border-collapse: collapse; }
+        .analysis-table th { text-align: left; padding: 8px; color: #6b7280; font-size: 0.9rem; border-bottom: 2px solid #e5e7eb; }
+        .analysis-table td { padding: 12px 8px; font-weight: bold; color: #374151; font-size: 1.1rem; border-bottom: 1px solid #f3f4f6; }
+        .analysis-table td:last-child { text-align: right; color: #ef4444; }
+
+        .btn-restart {
+            background: #374151; color: white; border: none; padding: 12px 24px; border-radius: 10px;
+            font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+
+        .review-area { width: 100%; text-align: left; padding-bottom: 50px; }
+        .review-title { font-size: 1.6rem; font-weight: 900; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; margin-top: 40px; }
+        .review-title:first-child { margin-top: 0; }
+
+        .wrong-card { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 25px; margin-bottom: 20px; }
+        .correct-card { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 25px; margin-bottom: 20px; }
+        
+        .wc-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .wc-tag { color: white; font-size: 0.9rem; padding: 4px 10px; border-radius: 6px; font-weight: bold; background: #6b7280; }
+        .wrong-card .wc-tag { background: #ef4444; }
+        .correct-card .wc-tag { background: #16a34a; }
+
+        .wc-q { font-size: 1.3rem; font-weight: bold; color: #1f2937; margin-bottom: 15px; line-height: 1.5; }
+        .wc-ans-box { display: flex; gap: 20px; font-size: 1.2rem; margin-bottom: 15px; }
+        .my-ans { color: #dc2626; text-decoration: line-through; }
+        .my-ans-correct { color: #16a34a; font-weight: bold; }
+        .cor-ans { color: #16a34a; font-weight: bold; }
+        .wc-exp { background: white; padding: 20px; border-radius: 8px; font-size: 1.5rem; color: #374151; line-height: 1.6; border-left: 4px solid #ddd; }
+        .wrong-card .wc-exp { border-left-color: #ef4444; }
+        .correct-card .wc-exp { border-left-color: #16a34a; }
+        
+        .empty-msg { font-size: 1.2rem; color: #9ca3af; text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <a href="../index.html" class="back-link">🔙 메인 목록으로 돌아가기</a>
+    </div>
+
+    <div class="mock-test-container">
+        <canvas id="confetti-canvas"></canvas>
+
+        <div id="start-screen" class="screen active">
+            <h2 class="start-title">N2 실전 모의고사</h2>
+            <p class="start-desc">
+                실제 시험처럼 한 번 선택하면 수정할 수 없습니다.<br>
+                합격 기준은 <strong>60점 이상</strong>입니다.<br>
+                도전할 코스를 선택하세요!
+            </p>
+            
+            <div class="course-grid">
+                <button class="course-btn" data-count="10">
+                    <span class="c-icon">🥉</span>
+                    <span class="c-title">10문제</span>
+                    <span class="c-time">제한시간 10분</span>
+                </button>
+                <button class="course-btn" data-count="20">
+                    <span class="c-icon">🥈</span>
+                    <span class="c-title">20문제</span>
+                    <span class="c-time">제한시간 20분</span>
+                </button>
+                <button class="course-btn" data-count="50">
+                    <span class="c-icon">🥇</span>
+                    <span class="c-title">50문제</span>
+                    <span class="c-time">제한시간 50분</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="quiz-screen" class="screen">
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="quiz-header">
+                <span class="q-badge" id="q-category">문자어휘</span>
+                <span class="timer" id="timer">00:00</span>
+            </div>
+            
+            <div class="question-box">
+                <div class="q-context" id="q-context" style="display:none;"></div>
+                <div class="q-text" id="q-text">문제 로딩 중...</div>
+            </div>
+
+            <div class="options-grid" id="options-container"></div>
+        </div>
+
+        <div id="result-screen" class="screen">
+            <div class="score-area">
+                <div class="stamp" id="result-stamp">合格</div>
+                <div class="score-title">최종 점수</div>
+                <div class="final-score" id="score-display">0점</div>
+                
+                <div class="analysis-box">
+                    <table class="analysis-table">
+                        <thead>
+                            <tr>
+                                <th>유형</th>
+                                <th>맞힌 개수</th>
+                                <th>정답률</th>
+                            </tr>
+                        </thead>
+                        <tbody id="analysis-tbody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <button class="btn-restart" id="btn-restart-game">↺ 처음으로 돌아가기</button>
+            </div>
+
+            <div class="review-area">
+                <div class="review-title" style="color:#ef4444;">📝 오답 노트 (Check)</div>
+                <div id="wrong-answers-list"></div>
+
+                <div class="review-title" style="color:#16a34a;">⭕ 정답 확인 (Good)</div>
+                <div id="correct-answers-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        const masterDB = [
+            // --- 문자 어휘 ---
+            { cat: "문자어휘", q: "環境汚染を防ぐための<u>措置</u>をとる。", ans: ["しょ치", "そち", "せっち", "사치"], cor: 1, exp: "措置(そち)는 '조치'입니다." },
+            { cat: "문자어휘", q: "上司の<u>承諾</u>を得てから行動する。", ans: ["しょうだく", "じょうだく", "しょうのく", "じょう의"], cor: 0, exp: "承諾(しょうだく)는 '승낙'입니다." },
+            { cat: "문자어휘", q: "新しい事業を<u>模索</u>している。", ans: ["ばくさく", "もさく", "ぼさく", "마쿠사쿠"], cor: 1, exp: "模索(もさく)는 '모색'입니다." },
+            { cat: "문자어휘", q: "彼はいつも<u>潔い</u>態度をとる。", ans: ["いさぎよい", "きよい", "するどい", "카시코이"], cor: 0, exp: "潔(いさぎよ)い: 미련 없이 깨끗하다, 떳떳하다." },
+            { cat: "문자어휘", q: "交渉が<u>妥結</u>した。", ans: ["だけつ", "だきつ", "たけつ", "타키츠"], cor: 0, exp: "妥結(だけつ)는 '타결'입니다." },
+            { cat: "문자어휘", q: "<u>快い</u>返事をいただいた。", ans: ["こころよい", "はやい", "かるい", "아카루이"], cor: 0, exp: "快(こころよ)이: 상쾌하다, 기분 좋다, 흔쾌하다." },
+            { cat: "문자어휘", q: "この件は<u>保留</u>にしておこう。", ans: ["ほりゅう", "ほうりゅう", "ほる", "호우루"], cor: 0, exp: "保留(ほりゅう)는 '보류'입니다." },
+            { cat: "문자어휘", q: "<u>柔軟</u>な対応が求められる。", ans: ["じゅうなん", "じゅなん", "しゅうなん", "슈난"], cor: 0, exp: "柔軟(じゅうなん)은 '유연'입니다." },
+            { cat: "문자어휘", q: "被害の拡大を<u>阻止</u>する。", ans: ["そし", "しょし", "そ止", "사시"], cor: 0, exp: "阻止(そ시)는 '저지'입니다." },
+            { cat: "문자어휘", q: "<u>顕著</u>な傾向が見られる。", ans: ["けんちょ", "げんちょ", "けんしょ", "겐쇼"], cor: 0, exp: "顕著(けんちょ)는 '현저(뚜렷함)'입니다." },
+            { cat: "문자어휘", q: "箱の<u>中身</u>を確認する。", ans: ["なかみ", "ちゅうしん", "나카신", "츄우미"], cor: 0, exp: "中身(なかみ)는 '내용물, 알맹이'입니다." },
+            { cat: "문자어휘", q: "<u>速やか</u>に行動してください。", ans: ["すみやか", "すこやか", "아자야카", "시나야카"], cor: 0, exp: "速(すみ)야카: 신속함, 빠름." },
+            { cat: "문자어휘", q: "<u>愚か</u>な行動は慎むべきだ。", ans: ["おろか", "おごか", "오로소카", "카스카"], cor: 0, exp: "愚(おろ)카: 어리석음." },
+            { cat: "문자어휘", q: "<u>巧み</u>な技에 감탄했다.", ans: ["たくみ", "たしなみ", "츠카미", "타타즈미"], cor: 0, exp: "巧(たく)미: 솜씨가 좋음, 교묘함." },
+            { cat: "문자어휘", q: "栄養이 <u>偏る</u>。", ans: ["かたよる", "へんる", "카타마루", "헤다타루"], cor: 0, exp: "偏(かたよ)루: 치우치다, 편중되다." },
+            
+            // --- 어휘 문맥 ---
+            { cat: "문자어휘", q: "年齢や性別を( &nbsp;&nbsp;&nbsp; )採用する。", ans: ["問わず", "関わらず", "込めて", "通じて"], cor: 0, exp: "～を問(と)わず: ~를 불문하고." },
+            { cat: "문자어휘", q: "意見の食い違いを( &nbsp;&nbsp;&nbsp; )する。", ans: ["是正", "修正", "訂正", "改正"], cor: 0, exp: "反映(ぜせい): (나쁜 점을) 바로잡음, 시정." },
+            { cat: "문자어휘", q: "彼は( &nbsp;&nbsp;&nbsp; )な性格で細かいことは気にしない。", ans: ["おおらか", "おろそか", "나다라카", "호가라카"], cor: 0, exp: "おおらか: 대범하고 느긋함." },
+            { cat: "문자어휘", q: "長年の努力が( &nbsp;&nbsp;&nbsp; )。", ans: ["実った", "熟した", "叶った", "키이타"], cor: 0, exp: "努力が実(みの)루: 노력이 결실을 맺다." },
+            { cat: "문자어휘", q: "具体的なイメージが( &nbsp;&nbsp;&nbsp; )にくい。", ans: ["わき", "つき", "우카비", "데키"], cor: 0, exp: "イメージがわく(솟다): 이미지가 떠오르다." },
+            { cat: "문자어휘", q: "権力を( &nbsp;&nbsp;&nbsp; )に着る。", ans: ["かさ", "たて", "우시로", "와쿠"], cor: 0, exp: "笠(かさ)に着る: 권력을 등에 업고 위세를 부리다." },
+            { cat: "문자어휘", q: "私には荷が( &nbsp;&nbsp;&nbsp; )。", ans: ["重い", "高い", "強い", "카타이"], cor: 0, exp: "荷(에)가 重(오모)이: 짐이 무겁다(책임이 과하다)." },
+            { cat: "문자어휘", q: "秘密を( &nbsp;&nbsp;&nbsp; )。", ans: ["打ち明けた", "打ち切った", "打ち込んだ", "우치도케타"], cor: 0, exp: "打ち明ける: (비밀을) 털어놓다." },
+            { cat: "문자어휘", q: "活発な意見が( &nbsp;&nbsp;&nbsp; )。", ans: ["交わされた", "交ぜられた", "교지타", "토오와사레타"], cor: 0, exp: "意見を交(카)와스: 의견을 나누다(교환하다)." },
+            { cat: "문자어휘", q: "前作を( &nbsp;&nbsp;&nbsp; )売り上げだ。", ans: ["しのぐ", "うわまわる", "코에루", "마사루"], cor: 0, exp: "凌(시노)구: 능가하다, 앞지르다." },
+
+            // --- 문법 ---
+            { cat: "문법", q: "間違っている( &nbsp;&nbsp; ) ( &nbsp;&nbsp; ) ( ★ ) ( &nbsp;&nbsp; )、謝らない。", ans: ["ことは", "知っている", "くせに", "노"], cor: 2, exp: "정답 순서: 間違っている[ことは][知っている][くせに] (★3번째).<br>~くせに: ~인 주제에." },
+            { cat: "문법", q: "家を出ようとした( &nbsp;&nbsp;&nbsp; )電話가 왔다.", ans: ["とたんに", "ところに", "最中に", "바카리니"], cor: 0, exp: "~(よう)としたとたん: ~하려는 순간." },
+            { cat: "문법", q: "データを見る( &nbsp;&nbsp;&nbsp; )、回復している。", ans: ["かぎり", "うえ", "아이다", "나카"], cor: 0, exp: "~かぎり(では): ~하는 한(에서는) / ~한 바로는." },
+            { cat: "문법", q: "うれしい( &nbsp;&nbsp;&nbsp; )ありゃしない。", ans: ["といったら", "こと", "もの", "토코로"], cor: 0, exp: "~といったらありゃしない: ~하기 짝이 없다 (강조)." },
+            { cat: "문법", q: "見れば見る( &nbsp;&nbsp;&nbsp; )面白くなる。", ans: ["ほど", "くらい", "だけ", "바카리"], cor: 0, exp: "~ば~ほど: ~하면 ~할수록." },
+            { cat: "문법", q: "天才( &nbsp;&nbsp;&nbsp; )努力家だ。", ans: ["というより", "というか", "といっても", "토이에바"], cor: 0, exp: "A라는것보다B: A라기보다 B다." },
+            { cat: "문법", q: "子供( &nbsp;&nbsp;&nbsp; )知っている。", ans: ["에서도", "나라", "다카라", "코소"], cor: 0, exp: "N + でも: ~라도 (극단적 예시)." },
+            { cat: "문법", q: "忙しい( &nbsp;&nbsp;&nbsp; )返信を忘れた。", ans: ["あまり", "바카리", "아마리니", "호도"], cor: 0, exp: "~아마리: 너무 ~한 나머지 (부정적 결과)." },
+            { cat: "문법", q: "決めた( &nbsp;&nbsp;&nbsp; )やるべきだ。", ans: ["からには", "からは", "카라시테", "카라토테"], cor: 0, exp: "~から에는: ~한 이상에는 (의무/의지)." },
+            { cat: "문법", q: "教えてくれてもいい( &nbsp;&nbsp;&nbsp; )。", ans: ["ものを", "ことを", "와케오", "하즈오"], cor: 0, exp: "~모노오: ~했을 텐데 (유감)." },
+            { cat: "문법", q: "彼は来る( &nbsp;&nbsp;&nbsp; )ないよ。", ans: ["っこ", "べき", "하즈", "와케"], cor: 0, exp: "Vます + っこない: ~할 리가 없다." },
+            { cat: "문법", q: "味( &nbsp;&nbsp;&nbsp; )雰囲気( &nbsp;&nbsp;&nbsp; )最高だ。", ans: ["といい／といい", "といわず／といわず", "야라／야라", "나리／나리"], cor: 0, exp: "N토이이N토이이: N도 그렇고 N도 그렇고 (평가)." },
+            { cat: "문법", q: "ゲーム( &nbsp;&nbsp;&nbsp; )寝る( &nbsp;&nbsp;&nbsp; )して過ごす。", ans: ["나리／나리", "토카／토카", "야라／야라", "다노／다노"], cor: 0, exp: "~나리~나리: ~하든 ~하든 (예시)." },
+            { cat: "문법", q: "期待に( &nbsp;&nbsp;&nbsp; )べく努力した。", ans: ["応える", "応える", "소우", "시타가우"], cor: 0, exp: "応(코타)에루베쿠: 부응하기 위해." },
+            { cat: "문법", q: "非難されても仕方が( &nbsp;&nbsp;&nbsp; )。", ans: ["ない", "ある", "나루", "이루"], cor: 0, exp: "仕様(시요)가나이: 어쩔 수 없다, 당연하다." },
+            { cat: "문법", q: "山頂まであと一歩という( &nbsp;&nbsp;&nbsp; )、諦めてしまった。", ans: ["ところで", "ところに", "토코로오", "토코로가"], cor: 0, exp: "~토코로데: ~하려던 찰나에/상황에서." },
+            { cat: "문법", q: "謝った( &nbsp;&nbsp;&nbsp; )、許してはもらえないだろう。", ans: ["ところで", "としたら", "카라토잇테", "토이에도모"], cor: 0, exp: "Vた + 토코로데: ~해봤자 (소용없다)." },
+            { cat: "문법", q: "この際、車を( &nbsp;&nbsp;&nbsp; )じゃないか。", ans: ["買おう", "買う", "캇테", "카와나이"], cor: 0, exp: "~(よ)우쟈나이카: ~하자 (권유/제안)." },
+            { cat: "문법", q: "信じよう( &nbsp;&nbsp;&nbsp; )信じまい( &nbsp;&nbsp;&nbsp; )、事実だ。", ans: ["と／と", "가／가", "카／카", "노／노"], cor: 0, exp: "~(よ)우토~마이토: ~하든 ~않든." },
+            { cat: "문법", q: "彼は医者( &nbsp;&nbsp;&nbsp; )、医学の知識はない。", ans: ["といえども", "ながら", "츠츠", "모노노"], cor: 0, exp: "~토이에도모: ~라고 해도 (가정/양보)." },
+
+            // --- 독해 ---
+            { cat: "독해", q: "筆者が言いたいことは何か。", context: "「失敗は成功의 어머니」라고 하지만, 그냥 실패하면 된다는 것은 아니다. 실패에서 원인을 분석하고 개선책을 생각하며, 다음에 살리려는 자세가 있어야 실패는 가치를 갖는다.", ans: ["실패에서 배우고 다음에 살리는 자세가 중요하다.", "실패를 두려워 말고 도전하는 것이 소중하다.", "실패해도 성공하면 모두 용서된다.", "실패를 반복하는 것은 성공의 지름길이다."], cor: 0, exp: "필자는 실패를 분석하고 다음에 살리는 '자세'가 중요하다고 말합니다." },
+            { cat: "독해", q: "筆者の考えに最も近いものはどれか。", context: "여행의 묘미는 예정대로 되지 않는 것에 있다. 길을 잃거나 말이 통하지 않는 트러블이야말로 나중에 가장 큰 추억이 되는 법이다.", ans: ["예기치 못한 트러블이 여행의 좋은 추억이 된다.", "여행은 계획대로 진행하는 것이 가장 중요하다.", "말이 통하지 않는 장소에는 가지 말아야 한다.", "완벽한 스케줄이 좋다."], cor: 0, exp: "예정대로 되지 않는 트러블이 추억이 된다는 내용입니다." },
+            { cat: "독해", q: "「それ」が指す内容は何か。", context: "인간은 누구나 타인에게 인정받고 싶다는 욕구를 가지고 있다. 하지만 <u>그것</u>만을 쫓으면 자기 자신을 잃어버리고 만다.", ans: ["타인에게 인정받고 싶다는 욕구", "자기 자신을 잃어버리는 것", "타인의 평가", "자신이 어떻게 있고 싶은지"], cor: 0, exp: "'그것'은 바로 앞의 '타인에게 인정받고 싶은 욕구'를 지칭합니다." },
+            { cat: "독해", q: "このメールの目的は何か。", context: "건명: 회의 일정 변경에 대하여<br>내일 14시 회의입니다만, 급한 일로 16시로 변경하고자 합니다.", ans: ["회의 시간을 변경하고 싶어 의뢰하기 위해", "회의를 중지하는 것을 알리기 위해", "트러블 내용을 보고하기 위해", "회의 장소를 변경하기 위해"], cor: 0, exp: "시간 변경을 요청하는 메일입니다." },
+            { cat: "독해", q: "筆者が考える「本当の優しさ」とは何か。", context: "바로 도움을 주는 것이 친절이라고는 할 수 없다. 그 사람이 스스로 해결할 수 있도록 굳이 지켜보는 것도 또한 친절의 하나다.", ans: ["상대의 자립을 위해 굳이 지켜보는 것", "곤란한 사람을 바로 도와주는 것", "상대의 성장 기회를 빼앗는 것", "문제를 대신 해결해 주는 것"], cor: 0, exp: "스스로 해결하도록 지켜보는 것도 상냥함입니다." },
+            { cat: "독해", q: "グラフの説明として正しいものはどれか。", context: "(그래프 설명: 10대 스마트폰 이용 시간은 매년 증가하고 있으나, 20대는 횡보 상태다.)", ans: ["10대는 늘고 있으나 20대는 별 변화가 없다.", "10대와 20대 모두 급격히 늘고 있다.", "20대가 10대보다 이용 시간이 길다.", "10대는 줄고 20대는 늘고 있다."], cor: 0, exp: "10대는 증가, 20대는 횡보(변화 없음)입니다." },
+            { cat: "독해", q: "指示の内容として正しいものはどれか。", context: "약 복용에 대하여: 식후 30분 이내에 복용하세요. 단, 다음 복용 시간이 가깝다면 1회분은 건너뛰세요.", ans: ["다음 복용 시간이 가까우면 먹지 않고 건너뛴다.", "복용을 잊었다면 다음 회에 2회분을 먹는다.", "식전 30분에 반드시 먹는다.", "생각났을 때 먹어서는 안 된다."], cor: 0, exp: "복용 시간이 가까우면 1회분을 건너뛰라는 지시입니다." },
+            { cat: "독해", q: "この店の特徴は何か。", context: "우리 가게 채소는 모두 계약 농가에서 매일 아침 직송되는 무농약 채소입니다. 모양은 고르지 않지만 맛의 깊이는 보장합니다.", ans: ["신선하고 안전한 무농약 채소를 사용한다.", "모양이 고르고 예쁜 채소를 사용한다.", "고급 식재료를 사용한다.", "수입 채소를 사용한다."], cor: 0, exp: "매일 직송되는 신선하고 안전한 무농약 야채가 특징입니다." },
+            { cat: "독해", q: "Aさんがこれからすることは何か。", context: "A「복사 용지가 다 되어 가네.」<br>B「창고에 있어. 가져올까?」<br>A「아니, 내가 가는 김에 가져올게. 겸사겸사 우편도 부치고 올게.」", ans: ["창고에서 종이를 가져오고 우편을 부친다.", "복사 용지를 주문한다.", "B에게 창고에 가달라고 한다.", "그저 우편을 부치러 갈 뿐이다."], cor: 0, exp: "A는 창고에서 종이도 가져오고 우편도 부치겠다고 했습니다." },
+            { cat: "독해", q: "この薬の注意点は何か。", context: "졸음을 유발하는 성분이 포함되어 있으므로, 복용 후 차 운전은 피해 주십시오.", ans: ["먹은 뒤에는 운전해서는 안 된다.", "자기 전에 먹어야 한다.", "운전하기 전에 먹는 것이 좋다.", "졸리지 않을 때는 먹어서는 안 된다."], cor: 0, exp: "복용 후 운전을 피하라는 주의사항입니다." }
+        ];
+
+        let currentQueue = [];
+        let currentIdx = 0;
+        let score = 0;
+        let totalTime = 0;
+        let timerInterval;
+        let userAnswers = [];
+
+        const els = {
+            startScreen: document.getElementById('start-screen'),
+            quizScreen: document.getElementById('quiz-screen'),
+            resultScreen: document.getElementById('result-screen'),
+            qCategory: document.getElementById('q-category'),
+            timer: document.getElementById('timer'),
+            qText: document.getElementById('q-text'),
+            qContext: document.getElementById('q-context'),
+            optsContainer: document.getElementById('options-container'),
+            progressBar: document.getElementById('progress-bar'),
+            scoreDisplay: document.getElementById('score-display'),
+            wrongList: document.getElementById('wrong-answers-list'),
+            correctList: document.getElementById('correct-answers-list'),
+            resultStamp: document.getElementById('result-stamp'),
+            analysisBody: document.getElementById('analysis-tbody'),
+            btnRestart: document.getElementById('btn-restart-game'),
+            confettiCanvas: document.getElementById('confetti-canvas')
+        };
+
+        function startGame(count) {
+            els.startScreen.classList.remove('active');
+            els.quizScreen.classList.add('active');
+            let shuffled = [...masterDB].sort(() => Math.random() - 0.5);
+            currentQueue = shuffled.slice(0, count);
+            totalTime = count * 60; 
+            currentIdx = 0;
+            score = 0;
+            userAnswers = []; 
+            startTimer();
+            loadQuestion(0);
+        }
+
+        const courseBtns = document.querySelectorAll('.course-btn');
+        courseBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const count = parseInt(this.dataset.count); 
+                startGame(count);
+            });
+        });
+
+        if(els.btnRestart) {
+            els.btnRestart.addEventListener('click', resetGame);
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                totalTime--;
+                updateTimerDisplay();
+                if (totalTime <= 0) {
+                    clearInterval(timerInterval);
+                    finishTest();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const min = Math.floor(totalTime / 60);
+            const sec = totalTime % 60;
+            els.timer.innerText = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+        }
+
+        function loadQuestion(idx) {
+            const data = currentQueue[idx];
+            const progressPercent = ((idx) / currentQueue.length) * 100;
+            els.progressBar.style.width = `${progressPercent}%`;
+            els.qCategory.innerText = `${data.cat} (${idx + 1}/${currentQueue.length})`;
+            els.qText.innerHTML = data.q;
+            if (data.context) {
+                els.qContext.style.display = 'block';
+                els.qContext.innerHTML = data.context;
+            } else {
+                els.qContext.style.display = 'none';
+            }
+            els.optsContainer.innerHTML = '';
+            data.ans.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerHTML = `${i + 1}. ${opt}`;
+                btn.onclick = () => handleAnswer(i);
+                els.optsContainer.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(selectedIdx) {
+            const data = currentQueue[currentIdx];
+            const isCorrect = (selectedIdx === data.cor);
+            if (isCorrect) score++;
+            userAnswers.push({
+                idx: currentIdx,
+                selected: selectedIdx,
+                isCorrect: isCorrect,
+                data: data
+            });
+            if (currentIdx < currentQueue.length - 1) {
+                currentIdx++;
+                loadQuestion(currentIdx);
+            } else {
+                els.progressBar.style.width = '100%';
+                finishTest();
+            }
+        }
+
+        function finishTest() {
+            clearInterval(timerInterval);
+            els.quizScreen.classList.remove('active');
+            els.resultScreen.classList.add('active');
+            renderResults();
+        }
+
+        function renderResults() {
+            els.wrongList.innerHTML = '';
+            els.correctList.innerHTML = '';
+            els.analysisBody.innerHTML = '';
+            let correctCount = 0;
+            let stats = { "문자어휘": { total: 0, cor: 0 }, "문법": { total: 0, cor: 0 }, "독해": { total: 0, cor: 0 } };
+
+            userAnswers.forEach((record) => {
+                const data = record.data;
+                const userText = (record.selected !== undefined) ? data.ans[record.selected] : "시간초과";
+                const corText = data.ans[data.cor];
+                let catKey = data.cat;
+                if(!stats[catKey]) stats[catKey] = {total:0, cor:0};
+                stats[catKey].total++;
+                if (record.isCorrect) {
+                    correctCount++;
+                    stats[catKey].cor++;
+                    const card = document.createElement('div');
+                    card.className = 'correct-card';
+                    card.innerHTML = `
+                        <div class="wc-header"><span class="wc-tag">${data.cat}</span></div>
+                        <div class="wc-q">Q. ${data.q.replace(/<br>/g, ' ')}</div>
+                        <div class="wc-ans-box"><span class="my-ans-correct">내 답: ${userText} ⭕</span></div>
+                        <div class="wc-exp"><strong>💡 해설:</strong><br>${data.exp}</div>
+                    `;
+                    els.correctList.appendChild(card);
+                } else {
+                    const card = document.createElement('div');
+                    card.className = 'wrong-card';
+                    card.innerHTML = `
+                        <div class="wc-header"><span class="wc-tag">${data.cat}</span></div>
+                        <div class="wc-q">Q. ${data.q.replace(/<br>/g, ' ')}</div>
+                        <div class="wc-ans-box">
+                            <span class="my-ans">내 답: ${userText}</span>
+                            <span class="cor-ans">정답: ${corText}</span>
+                        </div>
+                        <div class="wc-exp"><strong>💡 해설:</strong><br>${data.exp}</div>
+                    `;
+                    els.wrongList.appendChild(card);
+                }
+            });
+
+            const finalScore = Math.round((correctCount / currentQueue.length) * 100);
+            els.scoreDisplay.innerText = `${finalScore}점`;
+            els.resultStamp.className = 'stamp';
+            if (finalScore >= 60) {
+                els.resultStamp.innerText = "合格";
+                els.resultStamp.classList.add('pass', 'show');
+                playConfetti();
+            } else {
+                els.resultStamp.innerText = "不合格";
+                els.resultStamp.classList.add('fail', 'show');
+            }
+
+            for (const [key, val] of Object.entries(stats)) {
+                if (val.total > 0) {
+                    const rate = Math.round((val.cor / val.total) * 100);
+                    const row = `<tr><td>${key}</td><td>${val.cor} / ${val.total}</td><td>${rate}%</td></tr>`;
+                    els.analysisBody.innerHTML += row;
+                }
+            }
+
+            if (els.wrongList.innerHTML === '') els.wrongList.innerHTML = '<div class="empty-msg">틀린 문제가 없습니다. 완벽해요! 🎉</div>';
+            if (els.correctList.innerHTML === '') els.correctList.innerHTML = '<div class="empty-msg">맞힌 문제가 없습니다. 다시 도전해보세요! 💪</div>';
+        }
+
+        function resetGame() {
+            els.resultScreen.classList.remove('active');
+            els.startScreen.classList.add('active');
+            els.resultStamp.classList.remove('show', 'pass', 'fail');
+            els.confettiCanvas.style.display = 'none';
+        }
+
+        function playConfetti() {
+            const canvas = els.confettiCanvas;
+            canvas.style.display = 'block';
+            const ctx = canvas.getContext('2d');
+            canvas.width = 800; canvas.height = 750;
+            const particles = [];
+            const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: canvas.width / 2, y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    size: Math.random() * 8 + 4
+                });
+            }
+            let frame = 0;
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach((p) => {
+                    p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.size *= 0.96;
+                    ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size);
+                });
+                if (frame++ < 100) requestAnimationFrame(animate);
+                else canvas.style.display = 'none';
+            }
+            animate();
+        }
+    });
+    </script>
+</body>
+</html>
