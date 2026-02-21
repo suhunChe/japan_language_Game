@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JLPT N1 문법 퀴즈 (격식체/문어체)</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Pretendard:wght@500;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- 뒤로가기 버튼 스타일 --- */
+        .back-link {
+            display: inline-block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #d97706; /* 골드 색상 */
+            color: #1c1917; /* 다크 배경색 */
+            text-decoration: none;
+            border-radius: 8px;
+            font-family: 'Pretendard', sans-serif;
+            font-weight: bold;
+            transition: 0.3s;
+            text-align: center;
+        }
+        .back-link:hover { background-color: #b45309; color: white; transform: translateY(-2px); }
+        .top-bar { text-align: center; background-color: #000; padding-top: 10px; }
+
+        /* --- 기존 수훈님 CSS 코드 --- */
+        body { background-color: #000; margin: 0; padding: 0; } /* 전체 다크 모드 */
+
+        .n1-grammar-container {
+            font-family: 'Pretendard', 'Noto Sans JP', sans-serif;
+            max-width: 800px; margin: 20px auto 40px auto; background: #1c1917; border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1px solid #44403c; overflow: hidden;
+            color: #f5f5f4; min-height: 600px; display: flex; flex-direction: column;
+            box-sizing: border-box;
+        }
+        .n1-grammar-container * { box-sizing: border-box; }
+
+        .quiz-header { background: linear-gradient(90deg, #b45309, #d97706); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; color: white; font-weight: bold; }
+        .quiz-body { padding: 40px 30px; flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        
+        .question-card { background: #292524; border: 1px solid #57534e; padding: 30px; border-radius: 12px; width: 100%; margin-bottom: 30px; }
+        .casual-text { font-size: 1.2rem; color: #a8a29e; margin-bottom: 10px; font-weight: normal; }
+        .formal-text { font-size: 1.7rem; color: #fff; font-weight: bold; line-height: 1.5; }
+        .q-blank { color: #fcd34d; border-bottom: 3px solid #fcd34d; padding: 0 10px; }
+        
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 600px; }
+        .option-btn { background: #44403c; border: 2px solid #57534e; color: #e7e5e4; padding: 20px; border-radius: 12px; font-size: 1.4rem; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        .option-btn:hover { background: #57534e; border-color: #d97706; color: #fcd34d; transform: translateY(-2px); }
+        
+        .feedback-box { margin-top: 25px; padding: 20px; border-radius: 10px; text-align: left; width: 100%; display: none; background: #0f172a; border-left: 5px solid #3b82f6; animation: slideDown 0.3s; }
+        .feedback-box.correct { border-left-color: #10b981; background: #064e3b; }
+        .feedback-box.wrong { border-left-color: #ef4444; background: #450a0a; }
+        .fb-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 10px; display: block; }
+        .fb-desc { font-size: 1.15rem; line-height: 1.6; color: #e5e7eb; }
+        
+        .btn-next { margin-top: 20px; background: #d97706; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; cursor: pointer; display: none; }
+        .btn-next:hover { background: #b45309; }
+
+        .result-view { display: none; text-align: center; padding: 40px; color: white; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+        
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 500px) {
+            .options-grid { grid-template-columns: 1fr; }
+            .formal-text { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <a href="../index.html" class="back-link">🔙 메인 목록으로 돌아가기</a>
+    </div>
+
+    <div class="n1-grammar-container">
+        <div class="quiz-header">
+            <div class="quiz-title">📜 N1 Formal Grammar Training</div>
+            <div class="quiz-progress" id="quiz-progress">1 / 10</div>
+        </div>
+        <div class="quiz-body" id="quiz-view">
+            <div class="question-card">
+                <div class="casual-text" id="casual-context">일상: "나 같은 사람이 해낼 수 있을까..."</div>
+                <div class="formal-text" id="formal-context">격식: 私<span class="q-blank">( ? )</span>に成し遂げられるだろうか。</div>
+            </div>
+            <div class="options-grid" id="options-area"></div>
+            <div class="feedback-box" id="feedback-box">
+                <span class="fb-title" id="fb-title"></span>
+                <div class="fb-desc" id="fb-desc"></div>
+            </div>
+            <button class="btn-next" id="btn-next">다음 문제 ▶</button>
+        </div>
+        <div class="result-view" id="result-view">
+            <div class="score-big" id="final-score" style="font-size: 4rem; font-weight: 900; color: #fcd34d; margin-bottom: 20px;">0점</div>
+            <p id="result-comment" style="margin-bottom:30px; font-size:1.2rem;"></p>
+            <button onclick="location.reload()" style="background:#44403c; color:white; border:1px solid #d97706; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:bold; font-family: 'Pretendard', sans-serif;">↺ 다시 학습하기</button>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const quizData = [
+            { 
+                casual: "나 같은 사람이 해낼 수 있을까...", 
+                formal: "私<span class='q-blank'>( ? )</span>に成し遂げられるだろうか。", 
+                options: ["ごとき", "なんか"], 
+                answer: 0, 
+                desc: "정답: <strong>ごとき (如き)</strong><br>'~따위, ~같은'이라는 뜻의 비하 혹은 겸양 표현입니다. N1 격식체에서는 'なんか' 대신 'ごとき'를 사용합니다."
+            },
+            { 
+                casual: "어쩔 수 없이 변경하게 되었다.", 
+                formal: "変更を<span class='q-blank'>( ? )</span>。", 
+                options: ["余儀なくされた", "しなければならなかった"], 
+                answer: 0, 
+                desc: "정답: <strong>余儀なくされた</strong><br>'余儀(よぎ)なくされる'는 '어쩔 수 없이 ~하게 되다'라는 뜻의 매우 딱딱한 문어체 표현입니다." 
+            },
+            { 
+                casual: "사장이 명령한 거라서 거절할 수 없다.", 
+                formal: "社長の命令<span class='q-blank'>( ? )</span>、断ることはできない。", 
+                options: ["とあって", "だけあって"], 
+                answer: 0, 
+                desc: "정답: <strong>とあって</strong><br>'~라서, ~이기 때문에'라는 뜻으로, 특별한 상황이나 이유를 제시할 때 사용하는 격식 표현입니다." 
+            },
+            { 
+                casual: "아무리 사장이라고 해도 용서할 수 없다.", 
+                formal: "社長<span class='q-blank'>( ? )</span>、許されることではない。", 
+                options: ["といえども", "といっても"], 
+                answer: 0, 
+                desc: "정답: <strong>といえども</strong><br>'~라고 해도'의 문어체 표현입니다. '비록 ~일지라도'라는 양보의 뜻을 강하게 나타냅니다." 
+            },
+            { 
+                casual: "여기 들어오지 마시오.", 
+                formal: "立ち入る<span class='q-blank'>( ? )</span>。", 
+                options: ["べからず", "ことなかれ"], 
+                answer: 0, 
+                desc: "정답: <strong>べからず</strong><br>'~해서는 안 된다'는 강한 금지를 나타내는 예스러운 문어체입니다. 게시판이나 경고문에서 주로 볼 수 있습니다." 
+            },
+            { 
+                casual: "도착하자마자 회의가 시작됐다.", 
+                formal: "到着する<span class='q-blank'>( ? )</span>、会議が始まった。", 
+                options: ["が早いか", "とすぐに"], 
+                answer: 0, 
+                desc: "정답: <strong>が早いか</strong><br>'~하자마자'라는 뜻으로, 앞 동작과 거의 동시에 뒷 동작이 일어남을 나타내는 긴박한 문어체 표현입니다." 
+            },
+            { 
+                casual: "분노를 참을 수가 없다.", 
+                formal: "怒りを<span class='q-blank'>( ? )</span>。", 
+                options: ["禁じ得ない", "我慢できない"], 
+                answer: 0, 
+                desc: "정답: <strong>禁じ得ない</strong><br>'~을 금할 수 없다(참을 수 없다)'는 뜻으로, 감정이 북받쳐 오름을 나타내는 격식 표현입니다." 
+            },
+            { 
+                casual: "태어날 때부터 재능을 가지고 있었다.", 
+                formal: "生まれ<span class='q-blank'>( ? )</span>にして才能を持っていた。", 
+                options: ["ながら", "つつ"], 
+                answer: 0, 
+                desc: "정답: <strong>ながら</strong><br>'生まれながらにして(태어나면서부터, 선천적으로)'는 관용적으로 쓰이는 N1 문형입니다. 상태가 유지됨을 나타냅니다." 
+            },
+            { 
+                casual: "나라를 지키기 위해 싸웠다.", 
+                formal: "国を<span class='q-blank'>( ? )</span>戦った。", 
+                options: ["守らんがため", "守るつもりで"], 
+                answer: 0, 
+                desc: "정답: <strong>守らんがため</strong><br>'V(부정형)+んがため'는 '~하기 위해(강한 목적)'라는 뜻의 고풍스러운 표현입니다." 
+            },
+            { 
+                casual: "경험이 없어서 실패했다.", 
+                formal: "経験不足<span class='q-blank'>( ? )</span>、失敗した。", 
+                options: ["ゆえに", "せいで"], 
+                answer: 0, 
+                desc: "정답: <strong>ゆえに</strong><br>'~때문에, ~이므로'라는 뜻의 문어체입니다. 이유나 원인을 격식 있게 설명할 때 사용합니다." 
+            }
+        ];
+
+        let currentIdx = 0; let score = 0;
+        const els = { 
+            progress: document.getElementById('quiz-progress'), 
+            casual: document.getElementById('casual-context'), 
+            formal: document.getElementById('formal-context'), 
+            optionsArea: document.getElementById('options-area'), 
+            feedbackBox: document.getElementById('feedback-box'), 
+            fbTitle: document.getElementById('fb-title'), 
+            fbDesc: document.getElementById('fb-desc'), 
+            btnNext: document.getElementById('btn-next'), 
+            quizView: document.getElementById('quiz-view'), 
+            resultView: document.getElementById('result-view'), 
+            finalScore: document.getElementById('final-score'), 
+            resultComment: document.getElementById('result-comment') 
+        };
+
+        function loadQuestion() {
+            const data = quizData[currentIdx];
+            els.progress.innerText = `${currentIdx + 1} / ${quizData.length}`;
+            els.casual.innerText = `일상: "${data.casual}"`;
+            els.formal.innerHTML = `격식: ${data.formal}`;
+            els.optionsArea.innerHTML = '';
+            els.feedbackBox.style.display = 'none';
+            els.btnNext.style.display = 'none';
+            
+            data.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn'; 
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    const isCor = (idx === data.answer);
+                    if(isCor) score++;
+                    els.feedbackBox.style.display = 'block';
+                    els.feedbackBox.className = `feedback-box ${isCor ? 'correct' : 'wrong'}`;
+                    els.fbTitle.innerText = isCor ? "⭕ Correct" : "❌ Incorrect";
+                    els.fbDesc.innerHTML = data.desc;
+                    els.btnNext.style.display = 'inline-block';
+                    els.optionsArea.style.pointerEvents = 'none';
+
+                    // 오답일 경우 정답 버튼 강조
+                    if (!isCor) {
+                        btn.style.backgroundColor = '#450a0a';
+                        btn.style.borderColor = '#ef4444';
+                        els.optionsArea.children[data.answer].style.backgroundColor = '#064e3b';
+                        els.optionsArea.children[data.answer].style.borderColor = '#10b981';
+                    } else {
+                        btn.style.backgroundColor = '#064e3b';
+                        btn.style.borderColor = '#10b981';
+                    }
+                };
+                els.optionsArea.appendChild(btn);
+            });
+            els.optionsArea.style.pointerEvents = 'auto';
+        }
+
+        els.btnNext.onclick = () => {
+            currentIdx++;
+            if (currentIdx < quizData.length) loadQuestion();
+            else {
+                els.quizView.style.display = 'none';
+                els.resultView.style.display = 'flex';
+                els.finalScore.innerText = `${(score/quizData.length)*100}점`;
+                els.resultComment.innerText = score >= 8 ? "격식 있는 일본어를 완벽하게 구사하시네요!" : "문어체 표현 암기가 조금 더 필요합니다.";
+            }
+        };
+        
+        loadQuestion();
+    });
+    </script>
+</body>
+</html>
