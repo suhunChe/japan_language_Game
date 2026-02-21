@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JLPT N2 독해 트레이닝</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Pretendard:wght@500;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 뒤로가기 버튼 스타일 --- */
+        .back-link {
+            display: inline-block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #1e3a8a; 
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-family: 'Pretendard', sans-serif;
+            font-weight: bold;
+            transition: 0.3s;
+            text-align: center;
+        }
+        .back-link:hover { background-color: #1e40af; transform: translateY(-2px); }
+        .top-bar { text-align: center; background-color: #eff6ff; padding-top: 10px; }
+
+        /* --- 기존 수훈님 CSS 코드 --- */
+        body { background-color: #eff6ff; margin: 0; padding: 0; }
+
+        /* [스타일 시트] Ver 1.9 */
+        .reading-game-container {
+            font-family: 'Pretendard', 'Noto Sans JP', sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border: 4px solid #3b82f6; 
+            overflow: hidden;
+            position: relative;
+            height: 750px;
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+            box-sizing: border-box;
+            transform: translate3d(0, 0, 0); 
+        }
+        .reading-game-container * { box-sizing: border-box; }
+
+        /* 지진 효과 */
+        @keyframes shake-hard {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+        .shake-active {
+            animation: shake-hard 0.5s;
+            border-color: #ef4444 !important; 
+        }
+
+        /* 형광펜 하이라이트 효과 */
+        .highlight-line {
+            background: linear-gradient(to top, #fde047 40%, transparent 40%);
+            font-weight: 900;
+            border-bottom: 2px solid #f59e0b;
+            color: #000;
+            transition: background 0.5s ease;
+            display: inline;
+            box-decoration-break: clone;
+            -webkit-box-decoration-break: clone;
+        }
+
+        /* 화면 전환 */
+        .game-screen { width: 100%; height: 100%; display: none; flex-direction: column; position: relative; }
+        .game-screen.active { display: flex; }
+
+        /* 메인(테마) 화면 */
+        #view-theme { background: #eff6ff; justify-content: center; align-items: center; gap: 25px; z-index: 10; }
+        .main-title { font-size: 2.8rem; font-weight: 900; color: #1e3a8a; margin-bottom: 25px; }
+        
+        .theme-btn {
+            width: 85%; max-width: 450px; padding: 22px 30px;
+            font-size: 1.6rem;
+            font-weight: bold; border-radius: 18px; border: none;
+            cursor: pointer; background: white; margin: 5px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex; justify-content: space-between; align-items: center;
+            text-decoration: none; color: #333;
+        }
+        .theme-btn:hover { background: #f1f5f9; transform: translateY(-2px); }
+        .tag { font-size: 1.1rem; padding: 5px 12px; border-radius: 15px; color: white; }
+        
+        /* 질문 박스 (최상단 헤더) */
+        .q-box { 
+            background: #1e40af; color: white; padding: 18px 25px; 
+            font-size: 1.6rem; font-weight: 600; text-align: left; flex-shrink: 0; line-height: 1.4;
+            display: flex; justify-content: space-between; align-items: center; 
+            position: relative; /* 타이머 중앙 정렬을 위한 기준점 */
+            border-bottom: 4px solid #172554; 
+        }
+        
+        /* 질문 텍스트 (타이머와 겹치지 않게 최대 너비 설정) */
+        .q-text-span {
+            flex: 1; 
+            max-width: 40%; /* 타이머 공간 확보 */
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* 중앙 타이머 (절대 위치) */
+        .timer-badge {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%); /* 정확한 중앙 정렬 */
+            background: #fff; color: #ef4444; font-size: 1.5rem; font-weight: 800;
+            padding: 5px 15px; border-radius: 30px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            z-index: 5;
+        }
+
+        /* 우측 정보 그룹 */
+        .q-info-group { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+
+        /* 점수 텍스트 */
+        .score-text { font-size: 1.4rem; color: #fbbf24; font-weight: 700; }
+
+        /* 문제 번호 */
+        .count-text { font-size: 1.2rem; color: #bfdbfe; font-weight: 500; }
+
+        /* 지문 영역 */
+        .txt-area { 
+            padding: 24px; text-align: left; 
+            font-size: 1.7rem; line-height: 1.8;
+            color: #333; height: 170px; 
+            overflow-y: auto; background: #fff; border-bottom: 2px solid #e2e8f0; flex-shrink: 0; 
+        }
+        
+        .bottom-area { flex-grow: 1; background: #f8fafc; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        
+        .choice-container { padding: 20px; display: flex; flex-direction: column; gap: 12px; height: 100%; overflow-y: auto; }
+        .choice-btn { 
+            background: white; border: 2px solid #cbd5e1; padding: 18px; border-radius: 14px; 
+            font-size: 1.5rem; cursor: pointer; text-align: left; font-weight: 600; color: #475569; margin: 0; 
+        }
+        .choice-btn:hover { border-color: #3b82f6; background: #eff6ff; color: #1e40af; }
+        .choice-btn.correct { background: #dcfce7; border-color: #22c55e; color: #15803d; }
+        .choice-btn.wrong { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+        .choice-btn.disabled { pointer-events: none; opacity: 0.6; }
+
+        .feedback-container { display: none; padding: 25px; height: 100%; overflow-y: auto; text-align: left; background: #f0fdf4; border-top: 4px solid #22c55e; }
+        .res-msg { font-size: 1.8rem; font-weight: 900; margin-bottom: 15px; display: block; } 
+        
+        /* 학습 카드 박스 */
+        .study-card { background: #fff; border: 2px solid #bfdbfe; padding: 18px; border-radius: 14px; margin-bottom: 15px; }
+        /* 카드 제목 */
+        .study-label { display: block; font-weight: 800; color: #2563eb; margin-bottom: 8px; font-size: 1.4rem; border-bottom: 2px solid #e0e7ff; padding-bottom: 5px; }
+        .trans-text { font-size: 1.5rem; color: #1e3a8a; line-height: 1.6; } 
+
+        /* 단어장 그리드 */
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 15px; }
+        /* 개별 단어 카드 */
+        .v-item { background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 10px; padding: 10px 5px; text-align: center; }
+        .v-w { font-size: 2rem; font-weight: 900; color: #065f46; display: block; } 
+        .v-r { font-size: 1.2rem; color: #059669; display: block; } 
+        .v-m { font-size: 1.4rem; color: #374151; display: block; border-top: 1px solid #a7f3d0; margin-top: 6px; padding-top: 4px; font-weight: 600; }
+
+        /* 다음 버튼 */
+        .next-btn { width: 100%; padding: 18px; background: #2563eb; color: white; font-size: 1.6rem; font-weight: bold; border: none; border-radius: 14px; cursor: pointer; margin-top: 10px; }
+        /* 힌트 알람 */
+        .toast { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: #fff7ed; border: 3px solid #f59e0b; padding: 15px 30px; border-radius: 40px; display: none; font-size: 1.5rem; font-weight: bold; color: #92400e; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width: 85%; text-align: center; }
+
+        /* [결과 화면] */
+        #view-result { justify-content: center; align-items: center; background: #f0f9ff; z-index: 100; }
+        .res-rank { font-size: 6rem; font-weight: 900; margin: 10px 0; text-shadow: 2px 2px 0px rgba(0,0,0,0.1); }
+        .res-score { font-size: 3rem; font-weight: 900; color: #333; margin-bottom: 10px; }
+        .res-text { font-size: 1.6rem; color: #555; margin-bottom: 40px; font-weight: 600; }
+        
+        /* 팝업 효과 */
+        @keyframes floatUp { 
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } 
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 
+            100% { opacity: 0; transform: translate(-50%, -150%); } 
+        }
+        
+        /* 점수 팝업 */
+        .score-popup { 
+            position: absolute; top: 50%; left: 50%; 
+            font-size: 5rem; font-weight: 900; color: #f59e0b; 
+            text-shadow: 2px 2px 0 #fff; pointer-events: none; z-index: 200; 
+            animation: floatUp 1s ease-out forwards; white-space: nowrap; 
+        }
+        /* 콤보 팝업 */
+        .combo-popup {
+            position: absolute; top: 40%; left: 50%; 
+            font-size: 4rem; font-weight: 900; color: #ef4444; 
+            text-shadow: 2px 2px 0 #fff; pointer-events: none; z-index: 205; 
+            animation: floatUp 1s ease-out forwards; white-space: nowrap; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <a href="../index.html" class="back-link">🔙 메인 목록으로 돌아가기</a>
+    </div>
+
+    <div class="reading-game-container">
+        
+        <div id="view-theme" class="game-screen active">
+            <div class="main-title">N2 독해 트레이닝</div>
+            <button class="theme-btn" data-theme="daily"><span>📘 일상/비즈니스</span><span class="tag" style="background:#0284c7">Easy</span></button>
+            <button class="theme-btn" data-theme="misc"><span>🌍 시사/상식</span><span class="tag" style="background:#059669">Normal</span></button>
+            <button class="theme-btn" data-theme="philo"><span>🦉 철학/에세이</span><span class="tag" style="background:#7c3aed">Hard</span></button>
+            <button class="theme-btn" data-theme="all"><span>🔥 모든 문제 (랜덤)</span><span class="tag" style="background:#f59e0b">Mix</span></button>
+        </div>
+
+        <div id="view-game" class="game-screen">
+            <div class="q-box">
+                <span id="ui-question" class="q-text-span">질문 로딩...</span>
+                
+                <div id="ui-timer" class="timer-badge">⏱️ 60</div>
+
+                <div class="q-info-group">
+                    <span id="ui-score-text" class="score-text">(0/200)</span>
+                    <span id="ui-q-count" class="count-text"></span>
+                </div>
+            </div>
+            
+            <div class="txt-area" id="ui-text"></div>
+
+            <div class="bottom-area">
+                <div id="ui-choices" class="choice-container"></div>
+                
+                <div id="ui-feedback" class="feedback-container">
+                    <span id="fb-msg" class="res-msg"></span>
+                    
+                    <div class="study-card">
+                        <span class="study-label">🇰🇷 해석</span>
+                        <div id="fb-trans" class="trans-text"></div>
+                    </div>
+
+                    <div class="study-card">
+                        <span class="study-label">📚 핵심 단어장</span>
+                        <div id="fb-vocab" class="vocab-grid"></div>
+                    </div>
+
+                    <button id="btn-next" class="next-btn">다음 문제 ➜</button>
+                </div>
+
+                <div id="ui-toast" class="toast"></div>
+            </div>
+        </div>
+
+        <div id="view-result" class="game-screen">
+            <h2 style="font-size:2.5rem; color:#1e3a8a; margin-bottom:10px;">Game Over</h2>
+            <div id="res-rank" class="res-rank"></div>
+            <div class="res-score" id="res-score">0점</div>
+            <div id="res-msg" class="res-text"></div>
+            <button class="theme-btn" style="justify-content:center;">🔄 다시하기</button>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        const db = {
+            daily: [
+                { q: "이 메일의 주된 목적은?", text: "件名：会議日程の変更<br>関係者各位<br>来週の定例会議ですが、部長の出張のため延期します。<br>変更後の日程は追って連絡します。", opts: ["자료 배포", "회의 연기", "출장 공유", "참석 확인"], ans: 1, evidence: 2, hint: "'延期(연기)'를 확인하세요.", trans: "제목: 회의 일정 변경 / 관계자 각위 / 다음 주 정례회의는 부장님 출장으로 연기합니다. / 변경 후 일정은 추후 연락하겠습니다.", vocab: [{w:"件名",r:"けんめい",m:"제목"},{w:"日程",r:"にってい",m:"일정"},{w:"延期",r:"えんき",m:"연기"},{w:"出張",r:"しゅっちょう",m:"출장"},{w:"定例",r:"ていれい",m:"정례"},{w:"各位",r:"かくい",m:"각위"}] },
+                { q: "A씨가 화난 이유는?", text: "A: レストランで30分待たされた。<br>予約したのに『入ってない』と言われた。<br>謝罪も適当だったから腹が立った。", opts: ["맛없어서", "오래 기다려서", "사과가 건성이라", "예약 안 돼서"], ans: 2, evidence: 2, hint: "'謝罪(사죄)' 태도를 보세요.", trans: "A: 레스토랑에서 30분 기다렸어. 예약했는데 없다고 하고, 사과도 건성이어서 화났다.", vocab: [{w:"謝罪",r:"しゃざい",m:"사죄"},{w:"適当",r:"てきとう",m:"건성/적당"},{w:"腹が立つ",r:"はらがたつ",m:"화나다"},{w:"予約",r:"よやく",m:"예약"},{w:"待つ",r:"まつ",m:"기다리다"}] },
+                { q: "올바른 페트병 배출법은?", text: "ペットボトルはキャップとラベルを外し、中を洗って出してください。", opts: ["그냥 버린다", "뚜껑 닫고", "라벨 떼고 씻어서", "찌그러뜨려"], ans: 2, evidence: 0, hint: "'外し', '洗って'", trans: "페트병은 캡과 라벨을 떼고, 안을 씻어서 배출해주세요.", vocab: [{w:"外す",r:"はずす",m:"떼다"},{w:"洗う",r:"あらう",m:"씻다"},{w:"分別",r:"ぶんべつ",m:"분리"},{w:"中",r:"なか",m:"안"},{w:"出す",r:"だす",m:"내다"}] },
+                { q: "안내문의 요청 사항은?", text: "社内では節電をお願いします。<br>昼休みは消灯し、エアコンは28度に設定してください。", opts: ["청소", "절전", "야근", "회식"], ans: 1, evidence: 0, hint: "'節電'", trans: "사내에서는 절전을 부탁합니다. 점심시간 소등, 에어컨 28도 설정.", vocab: [{w:"節電",r:"せつでん",m:"절전"},{w:"消灯",r:"しょうとう",m:"소등"},{w:"設定",r:"せってい",m:"설정"},{w:"社内",r:"しゃない",m:"사내"},{w:"昼休み",r:"ひるやすみ",m:"점심시간"}] },
+                { q: "이 상품의 특징은?", text: "新発売の掃除機は、従来より50%軽くなりました。<br>片手で楽に掃除できます。", opts: ["싸다", "가볍다", "조용하다", "예쁘다"], ans: 1, evidence: 0, hint: "'軽く'", trans: "신제품 청소기는 기존보다 50% 가벼워졌습니다. 한 손으로 편하게 청소 가능합니다.", vocab: [{w:"従来",r:"じゅうらい",m:"기존"},{w:"軽い",r:"かるい",m:"가볍다"},{w:"片手",r:"かたて",m:"한 손"},{w:"発売",r:"はつばい",m:"발매"},{w:"掃除機",r:"そうじき",m:"청소기"}] },
+                { q: "부장의 지시 사항은?", text: "明日のプレゼン資料、今日中に確認したい。<br>15時までに提出してくれ。", opts: ["내일 제출", "15시까지 제출", "회의 취소", "자료 폐기"], ans: 1, evidence: 1, hint: "'15時'", trans: "내일 발표 자료, 오늘 중 확인하고 싶다. 15시까지 제출해라.", vocab: [{w:"提出",r:"ていしゅつ",m:"제출"},{w:"確認",r:"かくにん",m:"확인"},{w:"資料",r:"しりょう",m:"자료"},{w:"今日中",r:"きょうじゅう",m:"오늘 중"}] },
+                { q: "고객이 문의한 내용은?", text: "注文した商品がまだ届きません。<br>発送状況を教えていただけますか？", opts: ["반품 요청", "주문 취소", "배송 상황", "상품 교환"], ans: 2, evidence: 1, hint: "'発送状況'", trans: "주문한 상품이 안 옵니다. 발송 상황을 알려주세요.", vocab: [{w:"注文",r:"ちゅうもん",m:"주문"},{w:"発送",r:"はっそう",m:"발송"},{w:"状況",r:"じょうきょう",m:"상황"},{w:"届く",r:"とどく",m:"도착하다"}] },
+                { q: "공지사항의 핵심은?", text: "エレベーターの点検を行います。<br>明日の10時から12時まで使用できません。", opts: ["계단 이용", "사용 금지 안내", "고장 신고", "청소 시간"], ans: 1, evidence: 1, hint: "'使用できません'", trans: "엘리베이터 점검합니다. 내일 10-12시 사용 불가.", vocab: [{w:"点検",r:"てんけん",m:"점검"},{w:"使用",r:"しよう",m:"사용"},{w:"不可",r:"ふか",m:"불가"},{w:"行う",r:"おこなう",m:"행하다"}] },
+                { q: "다나카씨의 용건은?", text: "田中です。急な発熱で休みます。<br>ご迷惑おかけします。", opts: ["지각", "조퇴", "결근", "출장"], ans: 2, evidence: 0, hint: "'休みます'", trans: "다나카입니다. 급한 발열로 쉽니다. 폐 끼쳐 죄송합니다.", vocab: [{w:"発熱",r:"はつねつ",m:"발열"},{w:"迷惑",r:"めいわく",m:"민폐"},{w:"休む",r:"やすむ",m:"쉬다"},{w:"急な",r:"きゅうな",m:"급한"}] },
+                { q: "식당의 변경된 규칙은?", text: "来月から全席禁煙になります。<br>喫煙は外のスペースでお願いします。", opts: ["가격 인상", "메뉴 변경", "전석 금연", "영업 단축"], ans: 2, evidence: 0, hint: "'全席禁煙'", trans: "다음 달부터 전석 금연입니다. 흡연은 밖에서 부탁합니다.", vocab: [{w:"禁煙",r:"きんえん",m:"금연"},{w:"喫煙",r:"きつえん",m:"흡연"},{w:"全席",r:"ぜんせき",m:"전석"},{w:"来月",r:"らいげつ",m:"다음달"}] },
+                { q: "메일 작성자가 원하는 것은?", text: "見積書の金額に誤りがあります。<br>修正して再送してください。", opts: ["입금 확인", "견적서 수정", "계약 파기", "발주 취소"], ans: 1, evidence: 1, hint: "'修正'", trans: "견적서 금액 오류가 있습니다. 수정해서 다시 보내주세요.", vocab: [{w:"見積書",r:"みつもりしょ",m:"견적서"},{w:"修正",r:"しゅうせい",m:"수정"},{w:"誤り",r:"あやまり",m:"오류"},{w:"再送",r:"さいそう",m:"재발송"}] },
+                { q: "채용 공고의 특징은?", text: "経験不問、初心者歓迎。<br>丁寧に研修します。", opts: ["경력자 우대", "자격증 필수", "초보자 환영", "외국어 필수"], ans: 2, evidence: 0, hint: "'初心者歓迎'", trans: "경력 불문, 초보자 환영. 꼼꼼히 연수합니다.", vocab: [{w:"不問",r:"ふもん",m:"불문"},{w:"歓迎",r:"かんげい",m:"환영"},{w:"研修",r:"けんしゅう",m:"연수"},{w:"丁寧",r:"ていねい",m:"정중함"}] },
+                { q: "회의 장소 변경 이유는?", text: "参加者が増えたため、大会議室に変更します。<br>場所は3階です。", opts: ["에어컨 고장", "참가자 증가", "중복 예약", "청소 중"], ans: 1, evidence: 0, hint: "'増えたため'", trans: "참가자가 늘어서 대회의실로 변경합니다. 장소는 3층.", vocab: [{w:"参加者",r:"さんかしゃ",m:"참가자"},{w:"変更",r:"へんこう",m:"변경"},{w:"増える",r:"ふえる",m:"늘다"},{w:"場所",r:"ばしょ",m:"장소"}] },
+                { q: "도서관 이용 규칙은?", text: "館内での飲食は禁止です。<br>ペットボトルのみ持ち込み可能です。", opts: ["음식물 금지", "대화 금지", "스마트폰 금지", "잠자기 금지"], ans: 0, evidence: 0, hint: "'飲食は禁止'", trans: "관내 음식물 섭취 금지. 페트병만 반입 가능.", vocab: [{w:"飲食",r:"いんしょく",m:"음식"},{w:"禁止",r:"きんし",m:"금지"},{w:"持ち込み",r:"もちこみ",m:"반입"},{w:"可能",r:"かのう",m:"가능"}] },
+                { q: "이벤트 참가 조건은?", text: "本イベントは会員限定です。<br>当日、会員証を提示してください。", opts: ["누구나", "학생만", "회원만", "직원만"], ans: 2, evidence: 0, hint: "'会員限定'", trans: "본 이벤트는 회원 한정입니다. 당일 회원증 제시.", vocab: [{w:"限定",r:"げんてい",m:"한정"},{w:"提示",r:"ていじ",m:"제시"},{w:"会員証",r:"かいいんしょう",m:"회원증"},{w:"当日",r:"とうじつ",m:"당일"}] }
+            ],
+            philo: [
+                { q: "진정한 휴식이란?", text: "本当の休息とは、日常を忘れて好きなことに没頭することだ。", opts: ["잠자기", "뒹굴기", "몰입하기", "여행가기"], ans: 2, evidence: 0, hint: "'没頭'", trans: "진정한 휴식은 일상을 잊고 좋아하는 것에 몰두하는 것이다.", vocab: [{w:"休息",r:"きゅうそく",m:"휴식"},{w:"没頭",r:"ぼっとう",m:"몰두"},{w:"日常",r:"にちじょう",m:"일상"},{w:"忘れる",r:"わすれる",m:"잊다"}] },
+                { q: "실패에 대한 태도는?", text: "失敗は終わりではなく、過程に過ぎない。<br>重要なのはどう立ち上がるかだ。", opts: ["피해라", "숨겨라", "일어서라", "잊어라"], ans: 2, evidence: 1, hint: "'立ち上がる'", trans: "실패는 끝이 아닌 과정. 중요한 건 어떻게 일어서는가다.", vocab: [{w:"失敗",r:"しっぱい",m:"실패"},{w:"過程",r:"かてい",m:"과정"},{w:"立ち上がる",r:"たちあがる",m:"일어서다"},{w:"重要",r:"じゅうよう",m:"중요"}] },
+                { q: "고독의 긍정적 측면은?", text: "孤独は自分自身と向き合う絶好の機会だ。", opts: ["외로움", "자기 성찰", "우울함", "단절"], ans: 1, evidence: 0, hint: "'向き合う'", trans: "고독은 자신과 마주할 절호의 기회다.", vocab: [{w:"孤独",r:"こどく",m:"고독"},{w:"絶好",r:"ぜっこう",m:"절호"},{w:"向き合う",r:"むきあう",m:"마주보다"},{w:"機会",r:"きかい",m:"기회"}] },
+                { q: "행복의 조건은?", text: "幸せは遠くにあるものではなく、日常の小さなことの中にある。", opts: ["큰 성공", "많은 돈", "일상의 소소함", "타인의 인정"], ans: 2, evidence: 0, hint: "'日常'", trans: "행복은 멀리 있는 게 아니라 일상의 작은 것 속에 있다.", vocab: [{w:"幸せ",r:"しあわせ",m:"행복"},{w:"日常",r:"にちじょう",m:"일상"},{w:"遠く",r:"とおく",m:"멀리"}] },
+                { q: "시간 관리의 핵심은?", text: "時間は有限だ。<br>優先順位を決めて行動することが大切だ。", opts: ["빨리 하기", "우선순위", "잠 줄이기", "동시 작업"], ans: 1, evidence: 1, hint: "'優先順位'", trans: "시간은 유한하다. 우선순위를 정해 행동하는 게 중요하다.", vocab: [{w:"有限",r:"ゆうげん",m:"유한"},{w:"優先順位",r:"ゆうせんじゅんい",m:"우선순위"},{w:"行動",r:"こうどう",m:"행동"},{w:"大切",r:"たいせつ",m:"소중함"}] },
+                { q: "진정한 친구란?", text: "困った時に助けてくれるのが本当の友だ。<br>楽しい時だけ一緒にいるのは違う。", opts: ["돈 주는 사람", "놀 때 친구", "힘들 때 친구", "비밀 없는 사람"], ans: 2, evidence: 0, hint: "'困った時'", trans: "곤란할 때 도와주는 게 진짜 친구다.", vocab: [{w:"困る",r:"こまる",m:"곤란하다"},{w:"助ける",r:"たすける",m:"돕다"},{w:"本当",r:"ほんとう",m:"진짜"},{w:"友",r:"とも",m:"친구"}] },
+                { q: "배움의 자세는?", text: "知らないことを恥じる必要はない。<br>知ろうとしないことが恥ずかしいのだ。", opts: ["숨겨라", "알려고 해라", "아는 척해라", "질문 마라"], ans: 1, evidence: 1, hint: "'知ろうとしない'", trans: "모르는 건 부끄럽지 않다. 알려고 안 하는 게 부끄러운 거다.", vocab: [{w:"恥じる",r:"はじる",m:"부끄러워하다"},{w:"必要",r:"ひつよう",m:"필요"},{w:"恥ずかしい",r:"はずかしい",m:"부끄럽다"}] },
+                { q: "성공의 비결은?", text: "才能よりも継続が力なり。<br>諦めずに続けることが成功への近道だ。", opts: ["재능", "꾸준함", "운", "인맥"], ans: 1, evidence: 0, hint: "'継続'", trans: "재능보다 꾸준함이 힘이다. 포기 않고 계속하는 게 지름길.", vocab: [{w:"才能",r:"さいのう",m:"재능"},{w:"継続",r:"けいぞく",m:"계속"},{w:"諦める",r:"あきらめる",m:"포기하다"},{w:"近道",r:"ちかみち",m:"지름길"}] },
+                { q: "말의 중요성은?", text: "言葉は一度出たら戻せない。<br>話す前によく考えるべきだ。", opts: ["많이 말하기", "빨리 말하기", "신중히 말하기", "크게 말하기"], ans: 2, evidence: 1, hint: "'よく考える'", trans: "말은 뱉으면 못 담는다. 말하기 전에 잘 생각해야 한다.", vocab: [{w:"言葉",r:"ことば",m:"말"},{w:"戻す",r:"もどす",m:"되돌리다"},{w:"考える",r:"かんがえる",m:"생각하다"}] },
+                { q: "변화에 대한 태도는?", text: "変化を恐れてはいけない。<br>新しいことへの挑戦が成長を生む。", opts: ["거부", "회피", "도전", "무시"], ans: 2, evidence: 1, hint: "'挑戦'", trans: "변화를 두려워 마라. 새로운 도전이 성장을 낳는다.", vocab: [{w:"変化",r:"へんか",m:"변화"},{w:"恐れる",r:"おそれる",m:"두려워하다"},{w:"挑戦",r:"ちょうせん",m:"도전"},{w:"成長",r:"せいちょう",m:"성장"}] },
+                { q: "비판을 대하는 자세는?", text: "批判は自分を成長させる薬だ。<br>感情的にならずに受け入れよう。", opts: ["무시", "반박", "수용", "분노"], ans: 2, evidence: 1, hint: "'受け入れよう'", trans: "비판은 성장의 약이다. 감정적이지 말고 받아들이자.", vocab: [{w:"批判",r:"ひはん",m:"비판"},{w:"感情的",r:"かんじょうてき",m:"감정적"},{w:"受け入れる",r:"うけいれる",m:"받아들이다"},{w:"薬",r:"くすり",m:"약"}] },
+                { q: "건강한 마음가짐은?", text: "他人と比べる必要はない。<br>昨日の自分より成長していればいい。", opts: ["타인과 경쟁", "과거의 나보다 성장", "최고 지향", "완벽주의"], ans: 1, evidence: 1, hint: "'昨日の自分'", trans: "남과 비교 마라. 어제의 나보다 성장하면 된다.", vocab: [{w:"他人",r:"たにん",m:"타인"},{w:"比べる",r:"くらべる",m:"비교하다"},{w:"成長",r:"せいちょう",m:"성장"}] },
+                { q: "감사의 효과는?", text: "感謝の言葉は周りを明るくする。<br>「ありがとう」を口癖にしよう。", opts: ["분위기 UP", "돈이 됨", "약점", "시간 낭비"], ans: 0, evidence: 0, hint: "'明るくする'", trans: "감사의 말은 주변을 밝게 한다. 고맙다를 입버릇처럼 하자.", vocab: [{w:"感謝",r:"かんしゃ",m:"감사"},{w:"口癖",r:"くちぐせ",m:"입버릇"},{w:"周り",r:"まわり",m:"주변"},{w:"明るい",r:"あかるい",m:"밝다"}] },
+                { q: "리더의 조건은?", text: "命令するのではなく、手本を見せるのがリーダーだ。<br>行動で示そう。", opts: ["강한 명령", "솔선수범", "엄격한 처벌", "많은 지식"], ans: 1, evidence: 0, hint: "'手本'", trans: "명령보다 본보기 보이는 게 리더다. 행동으로 보여라.", vocab: [{w:"命令",r:"めいれい",m:"명령"},{w:"手本",r:"てほん",m:"모범"},{w:"行動",r:"こうどう",m:"행동"},{w:"示す",r:"しめす",m:"보이다"}] },
+                { q: "독서의 가치는?", text: "本は新しい世界への扉だ。<br>一冊の本が人生を変えることもある。", opts: ["수면 유도", "시간 때우기", "새로운 세계", "종이 낭비"], ans: 2, evidence: 0, hint: "'新しい世界'", trans: "책은 새 세계로의 문이다. 한 권이 인생을 바꾸기도 한다.", vocab: [{w:"扉",r:"とびら",m:"문"},{w:"人生",r:"じんせい",m:"인생"},{w:"世界",r:"せかい",m:"세계"},{w:"変える",r:"かえる",m:"바꾸다"}] }
+            ],
+            misc: [
+                { q: "이 기술의 특징은?", text: "方言まで翻訳できるのが特徴だ。", opts: ["빠르다", "싸다", "사투리 번역", "오프라인"], ans: 2, evidence: 0, hint: "'方言'", trans: "사투리까지 번역 가능한 게 특징이다.", vocab: [{w:"方言",r:"ほうげん",m:"방언"},{w:"翻訳",r:"ほんやく",m:"번역"},{w:"特徴",r:"とくちょう",m:"특징"}] },
+                { q: "환경 보호 제안은?", text: "まずはマイバッグを持ち歩こう。", opts: ["청소", "장바구니", "재활용", "나무심기"], ans: 1, evidence: 0, hint: "'マイバッグ'", trans: "우선 마이백(장바구니)을 들고 다니자.", vocab: [{w:"持ち歩く",r:"もちあるく",m:"휴대하다"},{w:"袋",r:"ふくろ",m:"봉투"}] },
+                { q: "수면 부족의 영향은?", text: "睡眠不足は集中力を低下させる。<br>ミスが増える原因になる。", opts: ["기분 좋음", "집중력 저하", "체중 감소", "시력 향상"], ans: 1, evidence: 0, hint: "'集中力'", trans: "수면 부족은 집중력을 떨어뜨린다. 실수의 원인.", vocab: [{w:"睡眠不足",r:"すいみんぶそく",m:"수면부족"},{w:"低下",r:"ていか",m:"저하"},{w:"集中力",r:"しゅうちゅうりょく",m:"집중력"},{w:"原因",r:"げんいん",m:"원인"}] },
+                { q: "스마트폰 사용 주의점은?", text: "寝る前のスマホは睡眠の質を下げる。<br>ブルーライトが脳を刺激するからだ。", opts: ["배터리 절약", "자기 전 자제", "화면 밝게", "소리 끄기"], ans: 1, evidence: 0, hint: "'寝る前'", trans: "자기 전 폰은 수면 질을 낮춘다. 블루라이트가 뇌 자극.", vocab: [{w:"質",r:"しつ",m:"질"},{w:"刺激",r:"しげき",m:"자극"},{w:"脳",r:"のう",m:"뇌"}] },
+                { q: "일본의 식문화 특징은?", text: "食事の前に「いただきます」と言う。<br>食材への感謝を表す言葉だ。", opts: ["묵념", "잘 먹겠습니다 인사", "박수", "노래"], ans: 1, evidence: 0, hint: "'いただきます'", trans: "식전 '이타다키마스'라고 한다. 식재료 감사 표현.", vocab: [{w:"食事",r:"しょくじ",m:"식사"},{w:"食材",r:"しょくざい",m:"식재료"},{w:"表す",r:"あらわす",m:"나타내다"}] },
+                { q: "온난화의 원인은?", text: "二酸化炭素の排出増加が温暖化の主な原因だ。", opts: ["쓰레기", "이산화탄소", "플라스틱", "자동차"], ans: 1, evidence: 0, hint: "'二酸化炭素'", trans: "이산화탄소 배출 증가가 주원인이다.", vocab: [{w:"二酸化炭素",r:"にさんかたんそ",m:"이산화탄소"},{w:"排出",r:"はいしゅつ",m:"배출"},{w:"温暖化",r:"おんだんか",m:"온난화"},{w:"増加",r:"ぞうか",m:"증가"}] },
+                { q: "지진 발생 시 행동은?", text: "地震が起きたら、まず机の下に隠れてください。<br>頭を守ることが最優先です。", opts: ["밖으로 뛰기", "책상 밑 숨기", "엘리베이터 타기", "불 끄기"], ans: 1, evidence: 0, hint: "'机の下'", trans: "지진 나면 책상 밑에 숨으세요. 머리 보호 최우선.", vocab: [{w:"地震",r:"じしん",m:"지진"},{w:"隠れる",r:"かくれる",m:"숨다"},{w:"最優先",r:"さいゆうせん",m:"최우선"},{w:"守る",r:"まもる",m:"지키다"}] },
+                { q: "AI의 역할은?", text: "AIは単純作業を効率化する。<br>人間は創造的な仕事に集中できる。", opts: ["창작", "단순 작업 효율화", "감정 표현", "운동"], ans: 1, evidence: 0, hint: "'単純作業'", trans: "AI는 단순 작업을 효율화한다. 인간은 창조적 일에 집중.", vocab: [{w:"単純",r:"たんじゅん",m:"단순"},{w:"効率化",r:"こうりつか",m:"효율화"},{w:"創造的",r:"そうぞうてき",m:"창조적"},{w:"作業",r:"さぎょう",m:"작업"}] },
+                { q: "녹차의 효능은?", text: "緑茶に含まれるカテキンは、風邪予防に効果がある。", opts: ["키 성장", "감기 예방", "시력 보호", "소화 불량"], ans: 1, evidence: 0, hint: "'風邪予防'", trans: "녹차의 카테킨은 감기 예방 효과가 있다.", vocab: [{w:"緑茶",r:"りょくちゃ",m:"녹차"},{w:"予防",r:"よぼう",m:"예방"},{w:"含む",r:"ふくむ",m:"포함하다"},{w:"効果",r:"こうか",m:"효과"}] },
+                { q: "편의점의 편리한 점은?", text: "日本のコンビニは24時間営業で、公共料金の支払いもできる。", opts: ["무료", "24시간 & 공과금", "배달", "할인"], ans: 1, evidence: 0, hint: "'24時間'", trans: "일본 편의점은 24시간이고 공과금 납부도 된다.", vocab: [{w:"公共料金",r:"こうきょうりょうきん",m:"공과금"},{w:"支払い",r:"しはらい",m:"지불"},{w:"営業",r:"えいぎょう",m:"영업"}] },
+                { q: "자전거 주차 규칙은?", text: "指定された駐輪場に止めてください。<br>路上駐車は撤去されます。", opts: ["아무데나", "지정 주차장", "집 안", "도로 위"], ans: 1, evidence: 0, hint: "'駐輪場'", trans: "지정된 주차장에 세우세요. 노상 주차는 철거됨.", vocab: [{w:"駐輪場",r:"ちゅうりんじょう",m:"자전거주차장"},{w:"撤去",r:"てっきょ",m:"철거"},{w:"指定",r:"してい",m:"지정"},{w:"路上",r:"ろじょう",m:"노상/길가"}] },
+                { q: "온천 입욕 매너는?", text: "湯船に入る前に、体を洗ってください。<br>タオルを湯船に入れてはいけません。", opts: ["수건 넣기", "몸 씻고 들어가기", "수영하기", "음식 먹기"], ans: 1, evidence: 0, hint: "'体を洗って'", trans: "탕에 들기 전 몸을 씻으세요. 수건 넣으면 안 됨.", vocab: [{w:"湯船",r:"ゆぶね",m:"욕조"},{w:"洗う",r:"あらう",m:"씻다"},{w:"入る",r:"はいる",m:"들어가다"}] },
+                { q: "벚꽃 놀이 주의점은?", text: "ゴミは必ず持ち帰りましょう。<br>大声で騒がないでください。", opts: ["쓰레기 투기", "쓰레기 되가져가기", "노래 부르기", "나무 꺾기"], ans: 1, evidence: 0, hint: "'持ち帰り'", trans: "쓰레기는 반드시 가져갑시다. 큰소리로 떠들지 마세요.", vocab: [{w:"持ち帰り",r:"もちかえり",m:"가져가기"},{w:"騒ぐ",r:"さわぐ",m:"떠들다"},{w:"大声",r:"おおごえ",m:"큰소리"},{w:"必ず",r:"かならず",m:"반드시"}] },
+                { q: "전철 내 매너는?", text: "優先席付近では携帯電話の電源を切ってください。<br>通話は遠慮しましょう。", opts: ["통화 하기", "전원 끄기(우선석)", "음악 듣기", "게임 하기"], ans: 1, evidence: 0, hint: "'電源を切って'", trans: "우선석 근처는 폰 전원 끄기. 통화 자제.", vocab: [{w:"優先席",r:"ゆうせんせき",m:"우선석"},{w:"遠慮",r:"えんりょ",m:"사양/자제"},{w:"電源",r:"でんげん",m:"전원"},{w:"付近",r:"ふきん",m:"부근"}] },
+                { q: "태풍 대비법은?", text: "ベランダの植木鉢を室内に入れてください。<br>窓ガラスが割れる危険があります。", opts: ["화분 들이기", "창문 열기", "외출 하기", "청소 하기"], ans: 0, evidence: 0, hint: "'室内に入れて'", trans: "베란다 화분 실내로 들이세요. 창문 깨질 위험 있음.", vocab: [{w:"植木鉢",r:"うえきばち",m:"화분"},{w:"危険",r:"きけん",m:"위험"},{w:"室内",r:"しつない",m:"실내"},{w:"割れる",r:"われる",m:"깨지다"}] }
+            ]
+        };
+
+        // 2. 변수 및 DOM 선택
+        let queue = [], qIdx = 0, score = 0, combo = 0, timer = null, timeLeft = 60, attempt = 0, maxScore = 0;
+        const MAX_Q = 10, SCORE_1 = 20, SCORE_2 = 10, BONUS = 5;
+
+        const els = {
+            screens: document.querySelectorAll('.game-screen'),
+            timer: document.getElementById('ui-timer'),
+            scoreText: document.getElementById('ui-score-text'),
+            q: document.getElementById('ui-question'),
+            qCount: document.getElementById('ui-q-count'), 
+            txt: document.getElementById('ui-text'),
+            choices: document.getElementById('ui-choices'),
+            fb: document.getElementById('ui-feedback'),
+            fb_msg: document.getElementById('fb-msg'),
+            fb_trans: document.getElementById('fb-trans'),
+            fb_vocab: document.getElementById('fb-vocab'),
+            toast: document.getElementById('ui-toast'),
+            nextBtn: document.getElementById('btn-next'),
+            resScore: document.getElementById('res-score'),
+            resRank: document.getElementById('res-rank'), // 등급 표시용
+            resMsg: document.getElementById('res-msg'),
+            wrapper: document.querySelector('.reading-game-container')
+        };
+
+        // 3. 버튼 이벤트 연결 (이벤트 위임)
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 다시하기 버튼이면 테마 화면으로 이동
+                if(this.innerText.includes("다시하기")) {
+                    showScreen('view-theme');
+                } else {
+                    const theme = this.getAttribute('data-theme');
+                    if(theme) startGame(theme);
+                }
+            });
+        });
+
+        if(els.nextBtn) els.nextBtn.addEventListener('click', nextQuestion);
+
+        // 4. 게임 로직
+        function showScreen(id) {
+            // id 보정
+            if (!id.startsWith('view-')) id = 'view-' + id.replace('view-', '');
+            
+            els.screens.forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(id);
+            if(target) target.classList.add('active');
+        }
+
+        function startGame(theme) {
+            queue = [];
+            if (theme === 'all') queue = [...db.daily, ...db.philo, ...db.misc];
+            else if (db[theme]) queue = [...db[theme]];
+
+            if (queue.length === 0) return;
+
+            queue.sort(() => 0.5 - Math.random());
+            queue = queue.slice(0, MAX_Q);
+
+            qIdx = 0; score = 0; combo = 0; 
+            maxScore = (MAX_Q * SCORE_1) + ((MAX_Q - 1) * BONUS);
+            
+            updateUI();
+            showScreen('game');
+            loadQuestion();
+        }
+
+        function updateUI() {
+            if(els.scoreText) els.scoreText.innerText = `(${score}/${maxScore})`;
+        }
+
+        function loadQuestion() {
+            attempt = 0; timeLeft = 60;
+            clearInterval(timer);
+            
+            const data = queue[qIdx];
+            if(!data) { showResult(); return; }
+
+            els.q.innerText = data.q;
+            // 카운터를 우측 요소에 별도로 표시
+            els.qCount.innerText = `[${qIdx+1}/${MAX_Q}]`;
+            // 타이머 텍스트에 아이콘 추가
+            if(els.timer) els.timer.innerText = `⏱️ ${timeLeft}`;
+            
+            // 텍스트를 줄바꿈 기준으로 쪼개서 ID 부여 (형광펜용)
+            els.txt.innerHTML = data.text.split('<br>').map((line, i) => 
+                `<div id="line-${i}" style="margin-bottom:8px; line-height:1.6;">${line}</div>`
+            ).join('');
+            
+            els.choices.innerHTML = '';
+            els.choices.style.display = 'flex';
+            els.fb.style.display = 'none';
+            els.toast.style.display = 'none';
+
+            data.opts.forEach((opt, i) => {
+                const btn = document.createElement('div');
+                btn.className = 'choice-btn';
+                btn.innerText = `(${i+1}) ${opt}`;
+                btn.addEventListener('click', () => checkAnswer(i, btn));
+                els.choices.appendChild(btn);
+            });
+
+            timer = setInterval(() => {
+                timeLeft--;
+                // 타이머 갱신 시 아이콘 유지
+                if(els.timer) els.timer.innerText = `⏱️ ${timeLeft}`;
+                if (timeLeft <= 0) { clearInterval(timer); showFeedback(false); }
+            }, 1000);
+        }
+
+        function triggerShake() {
+            if(els.wrapper) {
+                els.wrapper.classList.remove('shake-active');
+                void els.wrapper.offsetWidth; 
+                els.wrapper.classList.add('shake-active');
+                setTimeout(() => {
+                    els.wrapper.classList.remove('shake-active');
+                }, 500);
+            }
+        }
+
+        function showPopup(pts) {
+            if(!els.wrapper) return;
+            const p = document.createElement('div');
+            p.className = 'score-popup';
+            p.innerText = `+${pts}`;
+            els.wrapper.appendChild(p);
+            setTimeout(() => p.remove(), 1000);
+        }
+
+        // 콤보 팝업 함수
+        function showComboPopup(count) {
+            if(!els.wrapper) return;
+            const p = document.createElement('div');
+            p.className = 'combo-popup';
+            p.innerText = `🔥 ${count} Combo!`;
+            els.wrapper.appendChild(p);
+            setTimeout(() => p.remove(), 1000);
+        }
+
+        function checkAnswer(choice, btn) {
+            if (btn.classList.contains('disabled')) return;
+            const data = queue[qIdx];
+
+            if (choice === data.ans) {
+                clearInterval(timer);
+                btn.classList.add('correct');
+                
+                let pts = 0;
+                if (attempt === 0) {
+                    combo++;
+                    pts = SCORE_1 + (combo > 1 ? BONUS : 0);
+                    if (window.confetti) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                    
+                    // 2콤보 이상일 때 팝업 트리거
+                    if(combo > 1) showComboPopup(combo);
+                } else {
+                    pts = SCORE_2;
+                    combo = 0;
+                }
+                
+                score += pts;
+                showPopup(pts);
+                updateUI();
+                showFeedback(true);
+            } else {
+                triggerShake();
+                btn.classList.add('wrong');
+                btn.classList.add('disabled');
+                
+                if (attempt === 0) {
+                    attempt++;
+                    combo = 0; updateUI();
+                    showToast(data.hint);
+                } else {
+                    combo = 0; updateUI();
+                    clearInterval(timer);
+                    showFeedback(false);
+                }
+            }
+        }
+
+        function showFeedback(isSuccess) {
+            const data = queue[qIdx];
+            els.choices.style.display = 'none';
+            els.toast.style.display = 'none';
+            els.fb.style.display = 'block';
+            
+            els.fb.style.borderColor = isSuccess ? '#22c55e' : '#ef4444';
+            els.fb.style.background = isSuccess ? '#f0fdf4' : '#fef2f2';
+            
+            document.getElementById('fb-msg').innerText = isSuccess ? "🎉 정답입니다!" : "⚠️ 정답 확인";
+            document.getElementById('fb-msg').style.color = isSuccess ? "#15803d" : "#ef4444";
+            els.fb_trans.innerHTML = data.trans;
+
+            // [형광펜 효과] 정답 근거 문장 하이라이트
+            if (data.evidence !== undefined) {
+                const targetLine = document.getElementById(`line-${data.evidence}`);
+                if (targetLine) {
+                    targetLine.classList.add('highlight-line');
+                }
+            }
+
+            // 단어장 생성
+            els.fb_vocab.innerHTML = '';
+            if (data.vocab) {
+                data.vocab.forEach(v => {
+                    els.fb_vocab.innerHTML += `
+                        <div class="v-item">
+                            <span class="v-w">${v.w}</span>
+                            <span class="v-r">${v.r}</span>
+                            <span class="v-m">${v.m}</span>
+                        </div>`;
+                });
+            }
+            
+            els.nextBtn.innerText = (qIdx < MAX_Q - 1) ? "다음 문제 ➜" : "결과 보기 📊";
+        }
+
+        function nextQuestion() {
+            qIdx++;
+            if (qIdx < MAX_Q) loadQuestion();
+            else showResult();
+        }
+
+        function showResult() {
+            showScreen('result');
+            els.resScore.innerText = score + "점";
+            
+            let rank = "F", msg = "화이팅!", color = "#dc2626";
+            const ratio = score / maxScore;
+
+            if (ratio >= 0.95) { rank = "SSS"; msg = "신의 경지입니다! 🏆"; color="#d97706"; }
+            else if (ratio >= 0.85) { rank = "S"; msg = "합격 안정권입니다!"; color="#2563eb"; }
+            else if (ratio >= 0.75) { rank = "A"; msg = "훌륭해요! 조금만 더!"; color="#16a34a"; }
+            else if (ratio >= 0.60) { rank = "B"; msg = "잘하셨어요. 복습 필수!"; color="#0891b2"; }
+            else if (ratio >= 0.40) { rank = "C"; msg = "기초를 더 다져봅시다."; color="#ea580c"; }
+            
+            // 등급 표시
+            if(els.resRank) {
+                els.resRank.innerText = rank;
+                els.resRank.style.color = color;
+            }
+            document.getElementById('res-msg').innerText = msg;
+            if (score >= 180 && window.confetti) confetti();
+        }
+
+        function showToast(msg) {
+            els.toast.innerText = "💡 힌트: " + msg;
+            els.toast.style.display = 'block';
+        }
+    });
+    </script>
+</body>
+</html>
