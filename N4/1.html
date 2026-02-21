@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JLPT N4 단어 퀴즈 1 (필수 명사/동사)</title>
+    
+    <style>
+        /* --- 뒤로가기 버튼 스타일 --- */
+        .back-link {
+            display: inline-block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #064e3b; /* 어두운 초록색 (N4 테마) */
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            font-weight: bold;
+            transition: 0.3s;
+            text-align: center;
+        }
+        .back-link:hover { background-color: #10b981; transform: translateY(-2px); }
+        .top-bar { text-align: center; background-color: #f0fdf4; padding-top: 10px; }
+
+        /* --- N4 1탄 전용 스타일 (v4.2 Big UI Edition) --- */
+        #jp-n4-1-wrapper {
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            background-color: #f0fdf4;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; /* 오타 수정됨 */
+            padding: 10px;
+            border-radius: 10px;
+            margin: 0 auto 30px auto; /* 중앙 정렬 */
+            position: relative;
+            
+            --max-width: 650px;
+            --primary-color: #10b981;
+            --dark-color: #064e3b;
+            --accent-color: #f59e0b;
+            
+            /* [보통] 사이즈 */
+            --q-size: 40px;        
+            --ex-size: 20px;       
+            --opt-size: 20px;      
+            --ruby-size: 18px;     
+            --card-pad: 25px;      
+        }
+
+        /* [작게] 사이즈 */
+        #jp-n4-1-wrapper.size-small { 
+            --q-size: 24px; 
+            --ex-size: 14px; 
+            --opt-size: 15px; 
+            --ruby-size: 12px; 
+            --card-pad: 15px; 
+        }
+
+        /* [크게] 사이즈 */
+        #jp-n4-1-wrapper.size-large { 
+            --q-size: 52px;        
+            --ex-size: 26px; 
+            --opt-size: 26px; 
+            --ruby-size: 24px; 
+            --card-pad: 32px; 
+        }
+
+        #jp-n4-1-wrapper .quiz-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.2);
+            text-align: center;
+            width: 100%;
+            max-width: var(--max-width);
+            position: relative;
+            border: 2px solid var(--primary-color);
+            box-sizing: border-box;
+        }
+
+        /* 1. 컨트롤 패널 */
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            background: #ecfdf5;
+            padding: 8px 12px;
+            border-radius: 10px;
+        }
+        
+        .set-group { display: flex; flex-wrap: wrap; gap: 4px; }
+        .set-btn { background: #fff; border: 1px solid var(--primary-color); color: var(--primary-color); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .set-btn.active { background: var(--primary-color); color: white; }
+        .set-btn-all { border-color: var(--accent-color); color: #d97706; }
+        .set-btn-all.active { background: var(--accent-color); color: white; }
+
+        .size-group { display: flex; gap: 2px; }
+        .size-btn { background: #e5e7eb; border: none; padding: 4px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; }
+        .size-btn.active { background: #374151; color: white; }
+
+        /* 2. 상태 바 */
+        .status-bar { display: flex; justify-content: space-between; align-items: center; background: #374151; color: white; padding: 8px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; font-weight: bold; }
+        .status-item { display: flex; align-items: center; gap: 5px; }
+        .timer-icon { color: var(--accent-color); }
+        .score-box { color: #10b981; }
+
+        /* 3. 문제 영역 */
+        .question-card { padding: var(--card-pad); margin-bottom: 15px; border-bottom: 1px dashed #d1fae5; }
+        .word-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 15px; }
+
+        /* 요미가나 스타일 */
+        ruby { font-size: var(--q-size); font-weight: bold; color: var(--dark-color); line-height: 1.5; }
+        rt { font-size: var(--ruby-size); color: #059669; font-weight: normal; }
+
+        /* 오디오 버튼 */
+        .audio-btn { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
+        .audio-btn:active { transform: scale(0.9); }
+        .audio-btn:hover { background: #e5e7eb; }
+
+        /* 예문 스타일 */
+        .example-box { background: #f9fafb; padding: 15px; border-radius: 8px; font-size: var(--ex-size); color: #4b5563; line-height: 1.6; text-align: left; }
+        .highlight { color: #d97706; font-weight: bold; background: #fef3c7; padding: 0 4px; border-radius: 4px; }
+
+        /* 힌트 박스 */
+        .hint-box { display: none; margin-top: 10px; font-size: calc(var(--ex-size) - 1px); color: #059669; font-weight: bold; animation: fadeIn 0.3s; border-top: 1px solid #e5e7eb; padding-top: 8px; }
+
+        /* 4. 보기 영역 */
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .opt-btn { background-color: #f9fafb; border: 1px solid #e5e7eb; color: #374151; padding: 12px; font-size: var(--opt-size); border-radius: 10px; cursor: pointer; font-weight: bold; transition: all 0.1s; }
+        .opt-btn:hover { background-color: #ecfdf5; border-color: var(--primary-color); }
+        .opt-btn.correct { background-color: #10b981 !important; color: white !important; border-color: #10b981; }
+        .opt-btn.wrong { background-color: #ef4444 !important; color: white !important; border-color: #ef4444; opacity: 0.6; }
+        .opt-btn:disabled { cursor: not-allowed; opacity: 0.7; }
+
+        /* 다음 버튼 */
+        .next-btn { display: none; width: 100%; margin-top: 20px; padding: 15px; background-color: var(--primary-color); color: white; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; animation: fadeIn 0.3s; }
+        .next-btn:hover { background-color: #059669; }
+
+        /* 5. 결과 화면 */
+        #resultScreen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.99); border-radius: 15px; flex-direction: column; align-items: center; justify-content: center; z-index: 50; padding: 20px; box-sizing: border-box; }
+        .review-list { width: 100%; max-height: 200px; overflow-y: auto; background: #f3f4f6; border-radius: 8px; padding: 10px; margin: 15px 0; text-align: left; }
+        .review-item { border-bottom: 1px solid #e5e7eb; padding: 8px 0; font-size: 14px; }
+        .review-item:last-child { border-bottom: none; }
+        .review-word { font-weight: bold; color: var(--dark-color); }
+        .review-mean { color: #4b5563; }
+
+        .disabled-area { pointer-events: none; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body style="background-color: #f0fdf4; margin: 0; padding: 0;">
+
+    <div class="top-bar">
+        <a href="../index.html" class="back-link">🔙 메인 목록으로 돌아가기</a>
+    </div>
+
+    <div id="jp-n4-1-wrapper">
+        <div class="quiz-container">
+            
+            <div class="control-panel">
+                <div class="set-group">
+                    <button class="set-btn active" onclick="JpN4_1.changeSet(0)">1</button>
+                    <button class="set-btn" onclick="JpN4_1.changeSet(1)">2</button>
+                    <button class="set-btn" onclick="JpN4_1.changeSet(2)">3</button>
+                    <button class="set-btn" onclick="JpN4_1.changeSet(3)">4</button>
+                    <button class="set-btn" onclick="JpN4_1.changeSet(4)">5</button>
+                    <button class="set-btn set-btn-all" onclick="JpN4_1.changeSet('all')">ALL</button>
+                </div>
+                <div class="size-group">
+                    <button class="size-btn" onclick="JpN4_1.setSize('small')">작게</button>
+                    <button class="size-btn active" onclick="JpN4_1.setSize('medium')" id="btnSizeM">보통</button>
+                    <button class="size-btn" onclick="JpN4_1.setSize('large')">크게</button>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <div class="status-item">
+                    <span>📝</span>
+                    <span id="qCount">1 / 20</span>
+                </div>
+                <div class="status-item">
+                    <span class="timer-icon">⏱️</span>
+                    <span id="timerDisplay">0s</span>
+                </div>
+                <div class="status-item score-box">
+                    <span>🏆</span>
+                    <span id="liveScore">0</span>
+                </div>
+            </div>
+
+            <div class="question-card">
+                <div class="word-row">
+                    <div id="qWord">
+                        <ruby>単語<rt>たんご</rt></ruby>
+                    </div>
+                    <button class="audio-btn" onclick="JpN4_1.speak()" title="단어 듣기">🔊</button>
+                </div>
+
+                <div class="example-box">
+                    <span id="qExample">...</span>
+                    <div class="hint-box" id="qHint">...</div>
+                </div>
+            </div>
+
+            <div class="options-grid" id="qOptions"></div>
+
+            <button id="btnNext" class="next-btn" onclick="JpN4_1.nextQuestion()">다음 문제 ▶</button>
+
+            <div id="resultScreen">
+                <h2 style="color:#064e3b; margin:0 0 10px 0;">결과 리포트</h2>
+                <div style="font-size:36px; font-weight:bold; color:#10b981; margin-bottom:5px;">
+                    <span id="finalScore">0</span>점
+                </div>
+                <div style="font-size:14px; color:#6b7280; margin-bottom:15px;">
+                    (총점 <span id="maxScore">0</span>점 중)
+                </div>
+
+                <div id="wrongListHeader" style="width:100%; text-align:left; font-size:14px; font-weight:bold; color:#333; margin-bottom:5px;">
+                    ❌ 틀린 단어
+                </div>
+                <div class="review-list" id="wrongList">
+                </div>
+
+                <button class="next-btn" style="display:block; width:auto; padding:10px 30px;" onclick="JpN4_1.initGame()">다시 도전하기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        // N4 필수 명사/동사 100개 데이터
+        const dataPool = [
+            // Set 1: 생활 & 동작
+            {q: "集める", y: "あつめる", m: "모으다", ex: "趣味で切手を<span class='highlight'>集めて</span>います。", tr: "취미로 우표를 모으고 있습니다."},
+            {q: "謝る", y: "あやまる", m: "사과하다", ex: "素直に<span class='highlight'>謝った</span>ほうがいい。", tr: "솔직하게 사과하는 편이 좋다."},
+            {q: "急ぐ", y: "いそぐ", m: "서두르다", ex: "時間はあまりないから<span class='highlight'>急ごう</span>。", tr: "시간이 별로 없으니 서두르자."},
+            {q: "致す", y: "いたす", m: "하다(겸양)", ex: "私が<span class='highlight'>致します</span>。", tr: "제가 하겠습니다."},
+            {q: "頂く", y: "いただく", m: "받다/먹다(겸양)", ex: "お土産を<span class='highlight'>頂きました</span>。", tr: "선물을 받았습니다."},
+            {q: "祈る", y: "いのる", m: "기도하다", ex: "平和を<span class='highlight'>祈って</span>います。", tr: "평화를 기도하고 있습니다."},
+            {q: "植える", y: "うえる", m: "심다", ex: "庭に木を<span class='highlight'>植えました</span>。", tr: "마당에 나무를 심었습니다."},
+            {q: "伺う", y: "うかがう", m: "여쭙다/방문하다", ex: "明日、お宅へ<span class='highlight'>伺います</span>。", tr: "내일 댁으로 찾아뵙겠습니다."},
+            {q: "受付", y: "うけつけ", m: "접수처", ex: "<span class='highlight'>受付</span>で名前を書いてください。", tr: "접수처에서 이름을 써 주세요."},
+            {q: "嘘", y: "うそ", m: "거짓말", ex: "<span class='highlight'>嘘</span>をついてはいけません。", tr: "거짓말을 해서는 안 됩니다."},
+            {q: "売り場", y: "うりば", m: "매장", ex: "靴の<span class='highlight'>売り場</span>はどこですか。", tr: "신발 매장은 어디입니까?"},
+            {q: "運転", y: "うんてん", m: "운전", ex: "車の<span class='highlight'>運転</span>ができます。", tr: "자동차 운전을 할 수 있습니다."},
+            {q: "運動", y: "うんどう", m: "운동", ex: "毎日<span class='highlight'>運動</span>をしています。", tr: "매일 운동을 하고 있습니다."},
+            {q: "選ぶ", y: "えらぶ", m: "고르다", ex: "好きなものを<span class='highlight'>選んで</span>ください。", tr: "좋아하는 것을 골라 주세요."},
+            {q: "遠慮", y: "えんりょ", m: "사양함", ex: "<span class='highlight'>遠慮</span>しないで食べてください。", tr: "사양하지 말고 드세요."},
+            {q: "お祝い", y: "おいわい", m: "축하/선물", ex: "結婚の<span class='highlight'>お祝い</span>をあげる。", tr: "결혼 축하 선물을 주다."},
+            {q: "屋上", y: "おくじょう", m: "옥상", ex: "<span class='highlight'>屋上</span>からの景色がきれいだ。", tr: "옥상에서 보는 경치가 예쁘다."},
+            {q: "送る", y: "おくる", m: "보내다", ex: "荷物を<span class='highlight'>送りました</span>。", tr: "짐을 보냈습니다."},
+            {q: "遅れる", y: "おくれる", m: "늦다/지각하다", ex: "授業に<span class='highlight'>遅れないで</span>ください。", tr: "수업에 늦지 마세요."},
+            {q: "起こす", y: "おこす", m: "깨우다", ex: "毎朝、母が<span class='highlight'>起こして</span>くれます。", tr: "매일 아침 어머니가 깨워 줍니다."},
+
+            // Set 2: 감정 & 이동
+            {q: "怒る", y: "おこる", m: "화내다", ex: "父はとても<span class='highlight'>怒って</span>いた。", tr: "아버지는 매우 화나 있었다."},
+            {q: "落ちる", y: "おちる", m: "떨어지다", ex: "猿も木から<span class='highlight'>落ちる</span>。", tr: "원숭이도 나무에서 떨어진다."},
+            {q: "おっしゃる", y: "おっしゃる", m: "말씀하시다", ex: "先生が<span class='highlight'>おっしゃいました</span>。", tr: "선생님께서 말씀하셨습니다."},
+            {q: "落とす", y: "おとす", m: "떨어뜨리다", ex: "財布を<span class='highlight'>落として</span>しまった。", tr: "지갑을 떨어뜨리고 말았다."},
+            {q: "踊る", y: "おどる", m: "춤추다", ex: "音楽に合わせて<span class='highlight'>踊る</span>。", tr: "음악에 맞춰 춤추다."},
+            {q: "驚く", y: "おどろく", m: "놀라다", ex: "ニュースを聞いて<span class='highlight'>驚いた</span>。", tr: "뉴스를 듣고 놀랐다."},
+            {q: "海岸", y: "かいがん", m: "해안", ex: "<span class='highlight'>海岸</span>を散歩する。", tr: "해안을 산책하다."},
+            {q: "会議", y: "かいぎ", m: "회의", ex: "明日、重要な<span class='highlight'>会議</span>がある。", tr: "내일 중요한 회의가 있다."},
+            {q: "会場", y: "かいじょう", m: "회장(장소)", ex: "コンサートの<span class='highlight'>会場</span>に着いた。", tr: "콘서트장에 도착했다."},
+            {q: "会話", y: "かいわ", m: "회화", ex: "日本語の<span class='highlight'>会話</span>を練習する。", tr: "일본어 회화를 연습하다."},
+            {q: "帰り", y: "かえり", m: "귀가/돌아옴", ex: "会社からの<span class='highlight'>帰り</span>に買い物をする。", tr: "회사에서 돌아오는 길에 쇼핑을 하다."},
+            {q: "変える", y: "かえる", m: "바꾸다", ex: "髪型を<span class='highlight'>変えました</span>。", tr: "헤어스타일을 바꿨습니다."},
+            {q: "科学", y: "かがく", m: "과학", ex: "<span class='highlight'>科学</span>技術が進歩する。", tr: "과학 기술이 진보하다."},
+            {q: "鏡", y: "かがみ", m: "거울", ex: "<span class='highlight'>鏡</span>を見る。", tr: "거울을 보다."},
+            {q: "飾る", y: "かざる", m: "장식하다", ex: "部屋に花を<span class='highlight'>飾る</span>。", tr: "방에 꽃을 장식하다."},
+            {q: "火事", y: "かじ", m: "화재", ex: "近所で<span class='highlight'>火事</span>があった。", tr: "근처에서 화재가 있었다."},
+            {q: "片付ける", y: "かたづける", m: "정리하다", ex: "机の上を<span class='highlight'>片付けて</span>ください。", tr: "책상 위를 정리해 주세요."},
+            {q: "勝つ", y: "かつ", m: "이기다", ex: "試合に<span class='highlight'>勝った</span>。", tr: "시합에서 이겼다."},
+            {q: "悲しい", y: "かなしい", m: "슬프다", ex: "映画を見て<span class='highlight'>悲しく</span>なった。", tr: "영화를 보고 슬퍼졌다."},
+            {q: "必ず", y: "かならず", m: "반드시", ex: "<span class='highlight'>必ず</span>約束を守ります。", tr: "반드시 약속을 지키겠습니다."},
+
+            // Set 3: 생각 & 상태
+            {q: "通う", y: "かよう", m: "다니다", ex: "バスで会社に<span class='highlight'>通って</span>います。", tr: "버스로 회사에 다니고 있습니다."},
+            {q: "乾く", y: "かわく", m: "마르다", ex: "洗濯物がよく<span class='highlight'>乾く</span>。", tr: "빨래가 잘 마른다."},
+            {q: "代わる", y: "かわる", m: "대신하다", ex: "社長に<span class='highlight'>代わって</span>出席する。", tr: "사장님을 대신해서 출석하다."},
+            {q: "考える", y: "かんがえる", m: "생각하다", ex: "よく<span class='highlight'>考えて</span>から答える。", tr: "잘 생각하고 나서 대답하다."},
+            {q: "関係", y: "かんけい", m: "관계", ex: "私には<span class='highlight'>関係</span>がない。", tr: "나에게는 관계가 없다."},
+            {q: "看護師", y: "かんごし", m: "간호사", ex: "姉は<span class='highlight'>看護師</span>です。", tr: "누나는 간호사입니다."},
+            {q: "頑張る", y: "がんばる", m: "힘내다/분발하다", ex: "試験のために<span class='highlight'>頑張る</span>。", tr: "시험을 위해 열심히 하다."},
+            {q: "気", y: "き", m: "기분/기운", ex: "<span class='highlight'>気</span>をつけて帰ってください。", tr: "조심히 돌아가세요."},
+            {q: "機会", y: "きかい", m: "기회", ex: "留学する<span class='highlight'>機会</span>を得た。", tr: "유학할 기회를 얻었다."},
+            {q: "危険", y: "きけん", m: "위험", ex: "ここは<span class='highlight'>危険</span>です。", tr: "이곳은 위험합니다."},
+            {q: "季節", y: "きせつ", m: "계절", ex: "好きな<span class='highlight'>季節</span>はいつですか。", tr: "좋아하는 계절은 언제입니까?"},
+            {q: "規則", y: "きそく", m: "규칙", ex: "交通<span class='highlight'>規則</span>を守る。", tr: "교통 규칙을 지키다."},
+            {q: "気分", y: "きぶん", m: "기분", ex: "今日は<span class='highlight'>気分</span>がいい。", tr: "오늘은 기분이 좋다."},
+            {q: "決まる", y: "きまる", m: "정해지다", ex: "旅行の日程が<span class='highlight'>決まった</span>。", tr: "여행 일정이 정해졌다."},
+            {q: "決める", y: "きめる", m: "정하다", ex: "進路を<span class='highlight'>決める</span>。", tr: "진로를 정하다."},
+            {q: "気持ち", y: "きもち", m: "마음/기분", ex: "<span class='highlight'>気持ち</span>を伝える。", tr: "마음을 전하다."},
+            {q: "客", y: "きゃく", m: "손님", ex: "大勢の<span class='highlight'>客</span>が来た。", tr: "많은 손님이 왔다."},
+            {q: "急行", y: "きゅうこう", m: "급행", ex: "<span class='highlight'>急行</span>電車に乗る。", tr: "급행열차를 타다."},
+            {q: "教育", y: "きょういく", m: "교육", ex: "子供の<span class='highlight'>教育</span>は大切だ。", tr: "아이의 교육은 중요하다."},
+            {q: "教会", y: "きょうかい", m: "교회", ex: "日曜日に<span class='highlight'>教会</span>へ行く。", tr: "일요일에 교회에 가다."},
+
+            // Set 4: 사회 & 도구
+            {q: "競争", y: "きょうそう", m: "경쟁", ex: "激しい<span class='highlight'>競争</span>社会だ。", tr: "치열한 경쟁 사회다."},
+            {q: "興味", y: "きょうみ", m: "흥미", ex: "日本文化に<span class='highlight'>興味</span>がある。", tr: "일본 문화에 흥미가 있다."},
+            {q: "近所", y: "きんじょ", m: "이웃/근처", ex: "<span class='highlight'>近所</span>の人に挨拶する。", tr: "이웃 사람에게 인사하다."},
+            {q: "具合", y: "ぐあい", m: "상태/형편", ex: "体の<span class='highlight'>具合</span>が悪い。", tr: "몸 상태가 나쁘다."},
+            {q: "空気", y: "くうき", m: "공기", ex: "山の<span class='highlight'>空気</span>はおいしい。", tr: "산의 공기는 맛있다(상쾌하다)."},
+            {q: "空港", y: "くうこう", m: "공항", ex: "<span class='highlight'>空港</span>までバスで行く。", tr: "공항까지 버스로 가다."},
+            {q: "草", y: "くさ", m: "풀", ex: "庭の<span class='highlight'>草</span>を取る。", tr: "마당의 풀을 뽑다."},
+            {q: "下さる", y: "くださる", m: "주시다", ex: "先生が本を<span class='highlight'>くださいました</span>。", tr: "선생님이 책을 주셨습니다."},
+            {q: "首", y: "くび", m: "목", ex: "<span class='highlight'>首</span>が痛い。", tr: "목이 아프다."},
+            {q: "雲", y: "くも", m: "구름", ex: "空に白い<span class='highlight'>雲</span>が浮かんでいる。", tr: "하늘에 흰 구름이 떠 있다."},
+            {q: "比べる", y: "くらべる", m: "비교하다", ex: "値段を<span class='highlight'>比べる</span>。", tr: "가격을 비교하다."},
+            {q: "暮らす", y: "くらす", m: "살다/지내다", ex: "田舎で<span class='highlight'>暮らしたい</span>。", tr: "시골에서 살고 싶다."},
+            {q: "計画", y: "けいかく", m: "계획", ex: "旅行の<span class='highlight'>計画</span>を立てる。", tr: "여행 계획을 세우다."},
+            {q: "経験", y: "けいけん", m: "경험", ex: "良い<span class='highlight'>経験</span>になった。", tr: "좋은 경험이 되었다."},
+            {q: "経済", y: "けいざい", m: "경제", ex: "国の<span class='highlight'>経済</span>が発展する。", tr: "나라의 경제가 발전하다."},
+            {q: "警察", y: "けいさつ", m: "경찰", ex: "<span class='highlight'>警察</span>に電話する。", tr: "경찰에 전화하다."},
+            {q: "景色", y: "けしき", m: "경치", ex: "窓からの<span class='highlight'>景色</span>がいい。", tr: "창문으로 보이는 경치가 좋다."},
+            {q: "消す", y: "けす", m: "끄다/지우다", ex: "部屋の電気を<span class='highlight'>消す</span>。", tr: "방의 불을 끄다."},
+            {q: "下宿", y: "げしゅく", m: "하숙", ex: "学生時代に<span class='highlight'>下宿</span>していた。", tr: "학창 시절에 하숙했었다."},
+            {q: "決して", y: "けっして", m: "결코/절대로", ex: "<span class='highlight'>決して</span>諦めない。", tr: "결코 포기하지 않는다."},
+
+            // Set 5: 기타 & 추상
+            {q: "けれど", y: "けれど", m: "~지만/그러나", ex: "高い<span class='highlight'>けれど</span>、美味しい。", tr: "비싸지만 맛있다."},
+            {q: "原因", y: "げんいん", m: "원인", ex: "事故の<span class='highlight'>原因</span>を調べる。", tr: "사고의 원인을 조사하다."},
+            {q: "研究", y: "けんきゅう", m: "연구", ex: "大学で<span class='highlight'>研究</span>を続ける。", tr: "대학에서 연구를 계속하다."},
+            {q: "郊外", y: "こうがい", m: "교외", ex: "週末は<span class='highlight'>郊外</span>へドライブに行く。", tr: "주말은 교외로 드라이브를 간다."},
+            {q: "講義", y: "こうぎ", m: "강의", ex: "大学の<span class='highlight'>講義</span>に出る。", tr: "대학 강의에 나가다(출석하다)."},
+            {q: "工業", y: "こうぎょう", m: "공업", ex: "この町は<span class='highlight'>工業</span>が盛んだ。", tr: "이 마을은 공업이 성하다."},
+            {q: "高校", y: "こうこう", m: "고등학교", ex: "<span class='highlight'>高校</span>に入学する。", tr: "고등학교에 입학하다."},
+            {q: "公務員", y: "こうむいん", m: "공무원", ex: "父は<span class='highlight'>公務員</span>です。", tr: "아버지는 공무원입니다."},
+            {q: "声", y: "こえ", m: "목소리", ex: "大きな<span class='highlight'>声</span>で歌う。", tr: "큰 목소리로 노래하다."},
+            {q: "心", y: "こころ", m: "마음", ex: "<span class='highlight'>心</span>が温まる話。", tr: "마음이 따뜻해지는 이야기."},
+            {q: "故障", y: "こしょう", m: "고장", ex: "パソコンが<span class='highlight'>故障</span>した。", tr: "컴퓨터가 고장 났다."},
+            {q: "答える", y: "こたえる", m: "대답하다", ex: "質問に<span class='highlight'>答えて</span>ください。", tr: "질문에 대답해 주세요."},
+            {q: "断る", y: "ことわる", m: "거절하다", ex: "誘いを<span class='highlight'>断った</span>。", tr: "권유를 거절했다."},
+            {q: "細かい", y: "こまかい", m: "자세하다/작다", ex: "<span class='highlight'>細かい</span>お金がありません。", tr: "잔돈이 없습니다."},
+            {q: "困る", y: "こまる", m: "곤란하다", ex: "返事に<span class='highlight'>困る</span>。", tr: "대답하기 곤란하다."},
+            {q: "混む", y: "こむ", m: "붐비다", ex: "道が<span class='highlight'>混んで</span>いる。", tr: "길이 붐비고 있다."},
+            {q: "殺す", y: "ころす", m: "죽이다", ex: "虫を<span class='highlight'>殺さ</span>ないで。", tr: "벌레를 죽이지 마."},
+            {q: "壊れる", y: "こわれる", m: "부서지다/고장나다", ex: "椅子が<span class='highlight'>壊れた</span>。", tr: "의자가 부서졌다."},
+            {q: "今度", y: "こんど", m: "이번/다음", ex: "<span class='highlight'>今度</span>の休みに会おう。", tr: "이번 휴일에 만나자."},
+            {q: "最近", y: "さいきん", m: "최근", ex: "<span class='highlight'>最近</span>、忙しい。", tr: "최근에 바쁘다."}
+        ];
+
+        // 변수
+        let quizList = [];
+        let currentIdx = 0;
+        let score = 0;
+        let attempts = 0;
+        let currentMode = 0;
+        let timerInterval = null;
+        let seconds = 0;
+        let wrongAnswers = []; 
+        let maxPossibleScore = 0;
+
+        // DOM
+        const wrapper = document.getElementById('jp-n4-1-wrapper');
+        const elQWord = document.getElementById('qWord');
+        const elQExample = document.getElementById('qExample');
+        const elQHint = document.getElementById('qHint');
+        const elOptions = document.getElementById('qOptions');
+        const elNextBtn = document.getElementById('btnNext');
+        const elResult = document.getElementById('resultScreen');
+        const elFinalScore = document.getElementById('finalScore');
+        const elMaxScore = document.getElementById('maxScore');
+        const elWrongList = document.getElementById('wrongList');
+        const elWrongHeader = document.getElementById('wrongListHeader');
+
+        // Status Bar
+        const elQCount = document.getElementById('qCount');
+        const elTimer = document.getElementById('timerDisplay');
+        const elLiveScore = document.getElementById('liveScore');
+
+        // 유틸리티
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // 1. 사이즈 조절
+        function setSize(size) {
+            wrapper.classList.remove('size-small', 'size-large');
+            const btns = wrapper.querySelectorAll('.size-btn');
+            btns.forEach(b => b.classList.remove('active'));
+
+            if (size === 'small') {
+                wrapper.classList.add('size-small');
+                btns[0].classList.add('active');
+            } else if (size === 'large') {
+                wrapper.classList.add('size-large');
+                btns[2].classList.add('active');
+            } else {
+                btns[1].classList.add('active');
+            }
+        }
+
+        // 2. 세트 변경
+        function changeSet(mode) {
+            currentMode = mode;
+            const btns = wrapper.querySelectorAll('.set-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            
+            let btnIdx = (mode === 'all') ? 5 : mode;
+            btns[btnIdx].classList.add('active');
+            
+            initGame();
+        }
+
+        // 3. 게임 초기화
+        function initGame() {
+            let targetData = [];
+            if (currentMode === 'all') {
+                targetData = shuffle([...dataPool]);
+            } else {
+                const start = currentMode * 20;
+                const end = start + 20;
+                targetData = shuffle(dataPool.slice(start, end));
+            }
+
+            quizList = targetData;
+            currentIdx = 0;
+            score = 0;
+            wrongAnswers = [];
+            maxPossibleScore = quizList.length * 10;
+
+            elResult.style.display = 'none';
+            updateStatus();
+            loadQuestion();
+        }
+
+        // 4. 문제 로드
+        function loadQuestion() {
+            if (currentIdx >= quizList.length) {
+                finishGame();
+                return;
+            }
+
+            const data = quizList[currentIdx];
+            attempts = 0; 
+            
+            resetTimer();
+            startTimer();
+            updateStatus();
+
+            elQWord.innerHTML = `<ruby>${data.q}<rt>${data.y}</rt></ruby>`;
+            elQExample.innerHTML = data.ex;
+            
+            elQHint.style.display = 'none';
+            elQHint.innerText = `💡 해석: ${data.tr}`;
+
+            elNextBtn.style.display = 'none';
+            elOptions.innerHTML = '';
+            elOptions.classList.remove('disabled-area');
+
+            let opts = [{txt: data.m, isAns: true}];
+            let others = shuffle(dataPool.filter(d => d.m !== data.m)).slice(0, 3);
+            others.forEach(o => opts.push({txt: o.m, isAns: false}));
+            opts = shuffle(opts);
+
+            opts.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'opt-btn';
+                btn.innerText = opt.txt;
+                btn.onclick = () => checkAnswer(btn, opt.isAns);
+                elOptions.appendChild(btn);
+            });
+        }
+
+        // 5. 정답 확인
+        function checkAnswer(btn, isCorrect) {
+            if (isCorrect) {
+                stopTimer();
+                btn.classList.add('correct');
+                elOptions.classList.add('disabled-area');
+
+                if (attempts === 0) {
+                    let timeBonus = Math.max(2, 10 - Math.floor(seconds / 2)); 
+                    score += timeBonus;
+                    updateStatus();
+                    setTimeout(() => { nextQuestion(); }, 500);
+                } else {
+                    elNextBtn.style.display = 'block';
+                }
+            } else {
+                btn.classList.add('wrong');
+                btn.disabled = true;
+
+                if (attempts === 0) {
+                    attempts = 1;
+                    elQHint.style.display = 'block';
+                    
+                    const currentData = quizList[currentIdx];
+                    if(!wrongAnswers.includes(currentData)) {
+                        wrongAnswers.push(currentData);
+                    }
+                } else {
+                    stopTimer();
+                    elOptions.classList.add('disabled-area');
+                    const correctTxt = quizList[currentIdx].m;
+                    const allBtns = elOptions.querySelectorAll('.opt-btn');
+                    allBtns.forEach(b => {
+                        if (b.innerText === correctTxt) b.classList.add('correct');
+                    });
+                    elNextBtn.style.display = 'block';
+                }
+            }
+        }
+
+        // 6. 타이머
+        function startTimer() {
+            seconds = 0;
+            elTimer.innerText = "0s";
+            timerInterval = setInterval(() => {
+                seconds++;
+                elTimer.innerText = seconds + "s";
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function resetTimer() {
+            stopTimer();
+            seconds = 0;
+            elTimer.innerText = "0s";
+        }
+
+        // 7. 상태 업데이트
+        function updateStatus() {
+            elQCount.innerText = `${currentIdx + 1} / ${quizList.length}`;
+            elLiveScore.innerText = score;
+        }
+
+        // 8. 다음 문제
+        function nextQuestion() {
+            currentIdx++;
+            loadQuestion();
+        }
+
+        // 9. 음성 (단어만)
+        function speak() {
+            if (!('speechSynthesis' in window)) return;
+            
+            const data = quizList[currentIdx];
+            const text = data.q; 
+
+            const utt = new SpeechSynthesisUtterance(text);
+            utt.lang = 'ja-JP';
+            utt.rate = 0.9;
+
+            const voices = window.speechSynthesis.getVoices();
+            const jaVoice = voices.find(v => v.lang.includes('ja') || v.lang.includes('JP'));
+            if (jaVoice) utt.voice = jaVoice;
+
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utt);
+        }
+        
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = function() { window.speechSynthesis.getVoices(); };
+        }
+
+        // 10. 종료 및 리포트
+        function finishGame() {
+            stopTimer();
+            elFinalScore.innerText = score;
+            elMaxScore.innerText = maxPossibleScore;
+
+            // 오답 리스트 생성 (수정: 개수 표시)
+            elWrongList.innerHTML = '';
+            if (wrongAnswers.length === 0) {
+                elWrongHeader.innerText = "✅ 틀린 단어 없음";
+                elWrongList.innerHTML = '<div style="padding:10px; text-align:center;">🎉 완벽합니다! 틀린 문제가 없습니다.</div>';
+            } else {
+                elWrongHeader.innerText = `❌ 틀린 단어 (총 ${wrongAnswers.length}개)`;
+                wrongAnswers.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'review-item';
+                    div.innerHTML = `
+                        <div class="review-word">${item.q} (${item.y})</div>
+                        <div class="review-mean">${item.m}</div>
+                        <div style="font-size:12px; color:#999; margin-top:2px;">${item.tr}</div>
+                    `;
+                    elWrongList.appendChild(div);
+                });
+            }
+
+            elResult.style.display = 'flex';
+        }
+
+        window.JpN4_1 = { setSize, changeSet, initGame, nextQuestion, speak };
+        initGame();
+    })();
+    </script>
+</body>
+</html>
