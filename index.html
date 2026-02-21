@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JLPT 종합 학습 센터</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 상단 헤더 */
+        header {
+            background: linear-gradient(135deg, #1e293b, #334155);
+            color: white;
+            width: 100%;
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+            box-sizing: border-box;
+        }
+        header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+        header p {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #cbd5e1;
+        }
+
+        /* 메인 콘텐츠 영역 */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            padding: 0 20px 60px 20px;
+            box-sizing: border-box;
+        }
+
+        /* 레벨별 섹션 카드 */
+        .level-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border-top: 5px solid #ccc; /* 레벨별로 색상 변경됨 */
+        }
+        .level-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 퀴즈 버튼 그리드 */
+        .quiz-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .quiz-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            text-align: center;
+        }
+        .quiz-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        /* N5 스타일 (블루) */
+        .n5-card { border-top-color: #3b82f6; }
+        .n5-title { color: #1d4ed8; }
+        .n5-btn { background-color: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+        .n5-btn:hover { background-color: #3b82f6; color: white; }
+
+        /* N4 스타일 (에메랄드) */
+        .n4-card { border-top-color: #10b981; }
+        .n4-title { color: #047857; }
+        .n4-btn { background-color: #ecfdf5; color: #059669; border-color: #a7f3d0; }
+        .n4-btn:hover { background-color: #10b981; color: white; }
+
+        /* N3 스타일 (바이올렛/보라) */
+        .n3-card { border-top-color: #8b5cf6; }
+        .n3-title { color: #6d28d9; }
+        .n3-btn { background-color: #f5f3ff; color: #7c3aed; border-color: #ddd6fe; }
+        .n3-btn:hover { background-color: #8b5cf6; color: white; }
+
+        /* N2 스타일 (오렌지/레드) */
+        .n2-card { border-top-color: #f43f5e; }
+        .n2-title { color: #be123c; }
+        .n2-btn { background-color: #fff1f2; color: #e11d48; border-color: #fecdd3; }
+        .n2-btn:hover { background-color: #f43f5e; color: white; }
+
+        /* N1 스타일 (다크/골드) */
+        .n1-card { border-top-color: #d97706; background-color: #1c1917; color: white; }
+        .n1-title { color: #fcd34d; }
+        .n1-btn { background-color: #292524; color: #e7e5e4; border-color: #57534e; }
+        .n1-btn:hover { background-color: #d97706; color: white; border-color: #d97706; }
+
+        /* 파이널 모의고사 강조 버튼 */
+        .final-btn { font-weight: 800; color: white !important; }
+        .n5-final { background-color: #2563eb; border-color: #2563eb; }
+        .n4-final { background-color: #059669; border-color: #059669; }
+        .n3-final { background-color: #7c3aed; border-color: #7c3aed; }
+        .n2-final { background-color: #e11d48; border-color: #e11d48; }
+        .n1-final { background-color: #b45309; border-color: #b45309; }
+
+        /* 타자 연습 등 기타 유틸 */
+        .util-section { text-align: center; margin-top: 20px; }
+        .util-btn {
+            display: inline-block; padding: 12px 30px; background-color: #475569; color: white;
+            text-decoration: none; border-radius: 50px; font-weight: bold; transition: 0.2s;
+        }
+        .util-btn:hover { background-color: #1e293b; transform: translateY(-2px); }
+
+        @media (max-width: 600px) {
+            header h1 { font-size: 2rem; }
+            .quiz-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎌 JLPT 퀴즈 트레이닝</h1>
+        <p>N5 기초부터 N1 최고급까지, 게임처럼 즐겁게 일본어를 마스터하세요!</p>
+    </header>
+
+    <div class="container">
+        
+        <div class="util-section" style="margin-bottom: 40px;">
+            <a href="typing.html" class="util-btn">⌨️ 일본어 타자 연습 게임 가기</a>
+        </div>
+
+        <div class="level-section n1-card">
+            <div class="level-title n1-title">👑 JLPT N1</div>
+            <div class="quiz-grid">
+                <a href="N1/1.html" class="quiz-btn n1-btn">N1 퀴즈 1 (어휘 뉘앙스)</a>
+                <a href="N1/2.html" class="quiz-btn n1-btn">N1 퀴즈 2 (격식체 문법)</a>
+                <a href="N1/3.html" class="quiz-btn n1-btn">N1 퀴즈 3 (헷갈리는 한자)</a>
+                <a href="N1/4.html" class="quiz-btn n1-btn">N1 퀴즈 4 (논리 흐름 접속사)</a>
+                <a href="N1/5.html" class="quiz-btn n1-btn">N1 퀴즈 5 (청해 즉시응답)</a>
+                <a href="N1/6.html" class="quiz-btn n1-btn final-btn n1-final">🏆 N1 실전 모의고사</a>
+            </div>
+        </div>
+
+        <div class="level-section n2-card">
+            <div class="level-title n2-title">🔥 JLPT N2</div>
+            <div class="quiz-grid">
+                <a href="N2/1.html" class="quiz-btn n2-btn">N2 퀴즈 1 (비즈니스/추상어)</a>
+                <a href="N2/2.html" class="quiz-btn n2-btn">N2 퀴즈 2 (테마별 한자 매칭)</a>
+                <a href="N2/3.html" class="quiz-btn n2-btn">N2 퀴즈 3 (실전 문장 완성)</a>
+                <a href="N2/4.html" class="quiz-btn n2-btn">N2 퀴즈 4 (독해 트레이닝)</a>
+                <a href="N2/5.html" class="quiz-btn n2-btn">N2 퀴즈 5 (청해 쉐도잉)</a>
+                <a href="N2/6.html" class="quiz-btn n2-btn final-btn n2-final">🏆 N2 종합 모의고사</a>
+            </div>
+        </div>
+
+        <div class="level-section n3-card">
+            <div class="level-title n3-title">📘 JLPT N3</div>
+            <div class="quiz-grid">
+                <a href="N3/1.html" class="quiz-btn n3-btn">N3 퀴즈 1 (명사/동사)</a>
+                <a href="N3/2.html" class="quiz-btn n3-btn">N3 퀴즈 2 (복합동사/부사)</a>
+                <a href="N3/3.html" class="quiz-btn n3-btn">N3 퀴즈 3 (한자 읽기)</a>
+                <a href="N3/4.html" class="quiz-btn n3-btn">N3 퀴즈 4 (문법/뉘앙스)</a>
+                <a href="N3/5.html" class="quiz-btn n3-btn">N3 퀴즈 5 (의성어/관용구)</a>
+                <a href="N3/6.html" class="quiz-btn n3-btn final-btn n3-final">🏆 N3 파이널 모의고사</a>
+            </div>
+        </div>
+
+        <div class="level-section n4-card">
+            <div class="level-title n4-title">📗 JLPT N4</div>
+            <div class="quiz-grid">
+                <a href="N4/1.html" class="quiz-btn n4-btn">N4 퀴즈 1 (명사/동사)</a>
+                <a href="N4/2.html" class="quiz-btn n4-btn">N4 퀴즈 2 (형용사/부사)</a>
+                <a href="N4/3.html" class="quiz-btn n4-btn">N4 퀴즈 3 (동사 활용)</a>
+                <a href="N4/4.html" class="quiz-btn n4-btn">N4 퀴즈 4 (필수 한자)</a>
+                <a href="N4/5.html" class="quiz-btn n4-btn">N4 퀴즈 5 (필수 문법)</a>
+                <a href="N4/6.html" class="quiz-btn n4-btn">N4 퀴즈 6 (경어/회화)</a>
+                <a href="N4/7.html" class="quiz-btn n4-btn final-btn n4-final">🏆 N4 종합 모의고사</a>
+            </div>
+        </div>
+
+        <div class="level-section n5-card">
+            <div class="level-title n5-title">🌱 JLPT N5</div>
+            <div class="quiz-grid">
+                <a href="N5/1.html" class="quiz-btn n5-btn">N5 퀴즈 1 (명사)</a>
+                <a href="N5/2.html" class="quiz-btn n5-btn">N5 퀴즈 2 (동사)</a>
+                <a href="N5/3.html" class="quiz-btn n5-btn">N5 퀴즈 3 (형용사)</a>
+                <a href="N5/4.html" class="quiz-btn n5-btn">N5 퀴즈 4 (기초 한자)</a>
+                <a href="N5/5.html" class="quiz-btn n5-btn">N5 퀴즈 5 (기초 문법)</a>
+                <a href="N5/6.html" class="quiz-btn n5-btn">N5 퀴즈 6 (생활 회화)</a>
+                <a href="N5/7.html" class="quiz-btn n5-btn final-btn n5-final">🏆 N5 종합 모의고사</a>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
