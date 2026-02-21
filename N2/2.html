@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JLPT N2/N3 테마별 한자 게임</title>
+    
+    <style>
+        /* --- 뒤로가기 버튼 스타일 --- */
+        .back-link {
+            display: inline-block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #4a90e2; 
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-family: 'Pretendard', sans-serif;
+            font-weight: bold;
+            transition: 0.3s;
+            text-align: center;
+        }
+        .back-link:hover { background-color: #357abd; transform: translateY(-2px); }
+        .top-bar { text-align: center; background-color: #f4f6f8; padding-top: 10px; }
+
+        /* --- 기존 수훈님 CSS 코드 --- */
+        /* 전체 래퍼 */
+        #wp-hanja-game-wrapper {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f4f6f8;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 900px; /* 카드가 많으므로 너비를 조금 늘렸습니다 */
+            margin: 0 auto 20px auto;
+            box-sizing: border-box;
+            border: 1px solid #e1e4e8;
+            position: relative;
+        }
+        #wp-hanja-game-wrapper * { box-sizing: border-box; }
+
+        /* 헤더 및 버튼 영역 */
+        #wp-hanja-game-wrapper header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e1e4e8;
+            text-align: center;
+        }
+        #wp-hanja-game-wrapper h2.game-title {
+            color: #2c3e50;
+            margin: 0 0 15px 0;
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        /* 세트 선택 버튼 그룹 */
+        #wp-hanja-game-wrapper .set-selector {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        #wp-hanja-game-wrapper .btn-set {
+            padding: 12px 24px;  /* 상하 12px, 좌우 24px */
+            font-size: 1.1rem;   /* 글자 크기 1.1배 */
+            background-color: #fff;
+            color: #555;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        #wp-hanja-game-wrapper .btn-set:hover {
+            border-color: #4a90e2;
+            color: #4a90e2;
+        }
+        #wp-hanja-game-wrapper .btn-set.active {
+            background-color: #4a90e2;
+            color: white;
+            border-color: #4a90e2;
+        }
+        #wp-hanja-game-wrapper .btn-set.random-set {
+            border-color: #9b59b6;
+            color: #9b59b6;
+        }
+        #wp-hanja-game-wrapper .btn-set.random-set.active {
+            background-color: #9b59b6;
+            color: white;
+        }
+
+        /* 상태바 */
+        #wp-hanja-game-wrapper .status-bar {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            background: #fff;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            font-size: 1.1rem;
+            color: #555;
+            flex-wrap: wrap;
+        }
+        #wp-hanja-game-wrapper .score-text { color: #4a90e2; font-weight: bold; }
+
+        /* 게임 보드 */
+        #wp-hanja-game-wrapper .game-board {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            align-items: flex-start;
+            position: relative;
+        }
+        #wp-hanja-game-wrapper .game-section {
+            flex: 1;
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+        #wp-hanja-game-wrapper .col-header {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #ddd;
+        }
+        #wp-hanja-game-wrapper .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); 
+            gap: 10px;
+        }
+        @media (min-width: 768px) {
+            #wp-hanja-game-wrapper .card-grid { grid-template-columns: repeat(5, 1fr); }
+        }
+
+        /* 카드 스타일 */
+        #wp-hanja-game-wrapper .game-card {
+            background-color: #ffffff;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            height: 110px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            box-shadow: 0 2px 3px rgba(0,0,0,0.05);
+            padding: 4px;
+            line-height: 1.2;
+            word-break: keep-all;
+        }
+        #wp-hanja-game-wrapper .game-card.hanja {
+            font-size: 2.4rem;
+            font-weight: 800;
+            font-family: sans-serif;
+            color: #222;
+        }
+        
+        /* [수정] 요미가나 (위쪽, 크게) */
+        #wp-hanja-game-wrapper .yomi-text {
+            font-size: 1.8rem; /* 크기 확대 */
+            color: #d35400;    /* 주황색 강조 */
+            font-weight: 800;  /* 굵게 */
+            margin-bottom: 4px; /* 뜻과의 간격 */
+            font-family: sans-serif;
+        }
+
+        /* [수정] 한국어 뜻 (아래쪽, 작게) */
+        #wp-hanja-game-wrapper .meaning-text {
+            font-size: 1.4rem;   /* 크기 축소 */
+            color: #555;       /* 회색조 */
+            font-weight: 600;
+        }
+
+        #wp-hanja-game-wrapper .game-card:hover {
+            border-color: #4a90e2;
+            transform: translateY(-3px);
+        }
+        #wp-hanja-game-wrapper .game-card.selected {
+            border-color: #4a90e2;
+            background-color: #e3f2fd;
+            box-shadow: 0 0 0 3px #4a90e2 inset;
+        }
+        #wp-hanja-game-wrapper .game-card.matched {
+            border-color: transparent;
+            background-color: #f5f5f5;
+            color: #ccc;
+            cursor: default;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+        #wp-hanja-game-wrapper .game-card.matched .yomi-text,
+        #wp-hanja-game-wrapper .game-card.matched .meaning-text { color: #ccc; }
+
+        #wp-hanja-game-wrapper .game-card.wrong {
+            background-color: #ffebee;
+            border-color: #e74c3c;
+            animation: wp-game-shake 0.4s;
+        }
+        #wp-hanja-game-wrapper .game-card.hint-highlight {
+            background-color: #fff9c4 !important;
+            border-color: #fbc02d !important;
+            transform: scale(1.05);
+            z-index: 20;
+            box-shadow: 0 0 15px rgba(251, 192, 45, 0.6);
+        }
+        @keyframes wp-game-shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* 콤보 이펙트 */
+        #wp-hanja-game-wrapper .combo-msg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(46, 204, 113, 0.95);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: fadeOutUp 1.2s forwards;
+            z-index: 100;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        @keyframes fadeOutUp {
+            0% { opacity: 1; transform: translate(-50%, -50%); }
+            100% { opacity: 0; transform: translate(-50%, -100%); }
+        }
+
+        #wp-hanja-game-wrapper .btn-reset {
+            display: block;
+            margin: 25px auto 0;
+            padding: 12px 35px;
+            font-size: 1.1rem;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        #wp-error-log { display: none; color: red; text-align: center; margin-top: 10px; }
+        
+        @media (max-width: 600px) {
+            #wp-hanja-game-wrapper .game-board { flex-direction: column; }
+        }
+    </style>
+</head>
+<body style="background-color: #f4f6f8; margin: 0; padding: 0;">
+
+    <div class="top-bar">
+        <a href="../index.html" class="back-link">🔙 메인 목록으로 돌아가기</a>
+    </div>
+
+    <div id="wp-hanja-game-wrapper">
+        <header>
+            <h2 class="game-title">JLPT N2/N3 테마별 한자 게임</h2>
+            
+            <div class="set-selector" id="wp-set-selector">
+                <button class="btn-set active" data-set="1">Set 1: 모양 유사</button>
+                <button class="btn-set" data-set="2">Set 2: 부수 차이</button>
+                <button class="btn-set" data-set="3">Set 3: 복잡/획수</button>
+                <button class="btn-set" data-set="4">Set 4: 동음이의</button>
+                <button class="btn-set" data-set="5">Set 5: 혼동 주의</button>
+                <button class="btn-set random-set" data-set="6">Set 6: 랜덤 믹스</button>
+            </div>
+
+            <div class="status-bar">
+                <span>⏱️ <b id="wp-timer">00:00</b></span>
+                <span>🏆 <b id="wp-current-score" class="score-text">0</b> / 500</span>
+                <span>남은 쌍: <b id="wp-pairs-left">25</b></span>
+            </div>
+        </header>
+
+        <div id="wp-error-log"></div>
+
+        <div class="game-board">
+            <div id="wp-overlay-area"></div>
+            <div class="game-section">
+                <div class="col-header">한자 (Hanja)</div>
+                <div id="wp-col-hanja" class="card-grid"></div>
+            </div>
+            <div class="game-section">
+                <div class="col-header">뜻 (Meaning)</div>
+                <div id="wp-col-meaning" class="card-grid"></div>
+            </div>
+        </div>
+
+        <button id="wp-btn-reset" class="btn-reset">새로운 게임 시작</button>
+    </div>
+
+    <script>
+    (function() {
+        try {
+            var gameData = [];
+            var selectedMeaning = null;
+            var selectedHanja = null;
+            var pairsLeft = 0;
+            var PAIRS_COUNT = 25; 
+            
+            var currentScore = 0;
+            var MAX_SCORE = 500; 
+            var lastCorrectTime = 0; 
+            var gameTimer = null;
+            var secondsElapsed = 0;
+            
+            var firstSelectionType = null; 
+            var isStreakAlive = true; 
+            var currentSetId = 1; // 기본 세트 1
+
+            // ==========================================
+            // [데이터베이스] Set 1~5 (N2/N3 위주, N1 제외)
+            // ==========================================
+            var sets = {
+                1: [ // Set 1: 모양이 90% 일치 (Shape)
+                    {id:101, hanja:"徴", meaning:"징후 징", reading:"ちょう"}, {id:102, hanja:"微", meaning:"작을 미", reading:"び"},
+                    {id:103, hanja:"拾", meaning:"줍다 습", reading:"ひろ(う)"}, {id:104, hanja:"捨", meaning:"버리다 사", reading:"す(てる)"},
+                    {id:105, hanja:"持", meaning:"가지다 지", reading:"も(つ)"}, {id:106, hanja:"待", meaning:"기다리다 대", reading:"ま(つ)"},
+                    {id:107, hanja:"測", meaning:"재다 측", reading:"そく"}, {id:108, hanja:"側", meaning:"측면 측", reading:"がわ"},
+                    {id:109, hanja:"緑", meaning:"녹색 록", reading:"みどり"}, {id:110, hanja:"縁", meaning:"인연 연", reading:"えん"},
+                    {id:111, hanja:"彼", meaning:"그 피", reading:"かれ"}, {id:112, hanja:"波", meaning:"파도 파", reading:"なみ"},
+                    {id:113, hanja:"徒", meaning:"무리 도", reading:"と"}, {id:114, hanja:"従", meaning:"따르다 종", reading:"じゅう"},
+                    {id:115, hanja:"特", meaning:"특별 특", reading:"とく"}, {id:116, hanja:"持", meaning:"가지다 지", reading:"も(つ)"},
+                    {id:117, hanja:"未", meaning:"아직 미", reading:"み"}, {id:118, hanja:"末", meaning:"끝 말", reading:"まつ"},
+                    {id:119, hanja:"牛", meaning:"소 우", reading:"うし"}, {id:120, hanja:"午", meaning:"낮 오", reading:"ご"},
+                    {id:121, hanja:"石", meaning:"돌 석", reading:"いし"}, {id:122, hanja:"右", meaning:"오른 우", reading:"みぎ"},
+                    {id:123, hanja:"刀", meaning:"칼 도", reading:"かたな"}, {id:124, hanja:"刃", meaning:"칼날 인", reading:"は"},
+                    {id:125, hanja:"土", meaning:"흙 토", reading:"つち"}, {id:126, hanja:"士", meaning:"선비 사", reading:"し"},
+                    {id:127, hanja:"季", meaning:"계절 계", reading:"き"}, {id:128, hanja:"委", meaning:"맡길 위", reading:"い"},
+                    {id:129, hanja:"料", meaning:"재료 료", reading:"りょう"}, {id:130, hanja:"科", meaning:"과목 과", reading:"か"}
+                ],
+                2: [ // Set 2: 부수 차이 (Radical)
+                    {id:201, hanja:"裁", meaning:"재판 재", reading:"さい"}, {id:202, hanja:"栽", meaning:"심을 재", reading:"さい"},
+                    {id:203, hanja:"載", meaning:"실을 재", reading:"さい"}, {id:204, hanja:"衣", meaning:"옷 의", reading:"ころも"},
+                    {id:205, hanja:"依", meaning:"의지할 의", reading:"い"}, {id:206, hanja:"晴", meaning:"맑을 청", reading:"は(れ)"},
+                    {id:207, hanja:"情", meaning:"뜻 정", reading:"じょう"}, {id:208, hanja:"清", meaning:"맑을 청", reading:"きよ(い)"},
+                    {id:209, hanja:"精", meaning:"정밀 정", reading:"せい"}, {id:210, hanja:"請", meaning:"청할 청", reading:"せい"},
+                    {id:211, hanja:"招", meaning:"초대 초", reading:"まね(く)"}, {id:212, hanja:"昭", meaning:"밝을 소", reading:"しょう"},
+                    {id:213, hanja:"照", meaning:"비출 조", reading:"て(らす)"}, {id:214, hanja:"紹", meaning:"이을 소", reading:"しょう"},
+                    {id:215, hanja:"超", meaning:"넘을 초", reading:"ちょう"}, {id:216, hanja:"越", meaning:"넘을 월", reading:"こ(す)"},
+                    {id:217, hanja:"板", meaning:"판 판", reading:"いた"}, {id:218, hanja:"版", meaning:"출판 판", reading:"はん"},
+                    {id:219, hanja:"販", meaning:"팔 판", reading:"はん"}, {id:220, hanja:"泳", meaning:"수영 영", reading:"およ(ぐ)"},
+                    {id:221, hanja:"永", meaning:"길 영", reading:"えい"}, {id:222, hanja:"氷", meaning:"얼음 빙", reading:"こおり"},
+                    {id:223, hanja:"抱", meaning:"안을 포", reading:"だ(く)"}, {id:224, hanja:"泡", meaning:"거품 포", reading:"あわ"},
+                    {id:225, hanja:"胞", meaning:"세포 포", reading:"ほう"}, {id:226, hanja:"砲", meaning:"대포 포", reading:"ほう"},
+                    {id:227, hanja:"訪", meaning:"방문 방", reading:"ほう"}, {id:228, hanja:"坊", meaning:"동네 방", reading:"ぼう"},
+                    {id:229, hanja:"防", meaning:"막을 방", reading:"ぼう"}, {id:230, hanja:"放", meaning:"놓을 방", reading:"はな(す)"}
+                ],
+                3: [ // Set 3: 복잡/획수 (Complex)
+                    {id:301, hanja:"触", meaning:"닿을 촉", reading:"ふ(れる)"}, {id:302, hanja:"解", meaning:"풀 해", reading:"かい"},
+                    {id:303, hanja:"警", meaning:"경계 경", reading:"けい"}, {id:304, hanja:"驚", meaning:"놀랄 경", reading:"おどろ(く)"},
+                    {id:305, hanja:"職", meaning:"직업 직", reading:"しょく"}, {id:306, hanja:"識", meaning:"알 식", reading:"しき"},
+                    {id:307, hanja:"織", meaning:"짤 직", reading:"お(る)"}, {id:308, hanja:"臓", meaning:"내장 장", reading:"ぞう"},
+                    {id:309, hanja:"蔵", meaning:"창고 장", reading:"くら"}, {id:310, hanja:"装", meaning:"꾸밀 장", reading:"そう"},
+                    {id:311, hanja:"厳", meaning:"엄할 엄", reading:"げん"}, {id:312, hanja:"範", meaning:"법 범", reading:"はん"},
+                    {id:313, hanja:"義", meaning:"옳을 의", reading:"ぎ"}, {id:314, hanja:"儀", meaning:"거동 의", reading:"ぎ"},
+                    {id:315, hanja:"議", meaning:"의논 의", reading:"ぎ"}, {id:316, hanja:"犠", meaning:"희생 희", reading:"ぎ"},
+                    {id:317, hanja:"権", meaning:"권세 권", reading:"けん"}, {id:318, hanja:"観", meaning:"볼 관", reading:"かん"},
+                    {id:319, hanja:"歓", meaning:"기쁠 환", reading:"かん"}, {id:320, hanja:"勧", meaning:"권할 권", reading:"かん"},
+                    {id:321, hanja:"確", meaning:"굳을 확", reading:"かく"}, {id:322, hanja:"認", meaning:"인정 인", reading:"にん"},
+                    {id:323, hanja:"維", meaning:"유지 유", reading:"い"}, {id:324, hanja:"唯", meaning:"오직 유", reading:"ゆい"},
+                    {id:325, hanja:"雑", meaning:"섞일 잡", reading:"ざつ"}, {id:326, hanja:"離", meaning:"떠날 리", reading:"り"},
+                    {id:327, hanja:"難", meaning:"어려울 난", reading:"なん"}, {id:328, hanja:"勤", meaning:"근무 근", reading:"きん"},
+                    {id:329, hanja:"劇", meaning:"심할 극", reading:"げき"}, {id:330, hanja:"激", meaning:"격할 격", reading:"げき"}
+                ],
+                4: [ // Set 4: 동음이의어 (Homophones - Japanese focus)
+                    {id:401, hanja:"坂", meaning:"언덕 판", reading:"さか"}, {id:402, hanja:"酒", meaning:"술 주", reading:"さけ"},
+                    {id:403, hanja:"板", meaning:"널판지 판", reading:"いた"}, {id:404, hanja:"版", meaning:"판 판", reading:"はん"},
+                    {id:405, hanja:"会", meaning:"만날 회", reading:"かい"}, {id:406, hanja:"回", meaning:"돌 회", reading:"かい"},
+                    {id:407, hanja:"改", meaning:"고칠 개", reading:"かい"}, {id:408, hanja:"解", meaning:"풀 해", reading:"かい"},
+                    {id:409, hanja:"階", meaning:"층 계", reading:"かい"}, {id:410, hanja:"械", meaning:"기계 계", reading:"かい"},
+                    {id:411, hanja:"快", meaning:"쾌할 쾌", reading:"かい"}, {id:412, hanja:"怪", meaning:"괴이 괴", reading:"かい"},
+                    {id:413, hanja:"事", meaning:"일 사", reading:"じ"}, {id:414, hanja:"自", meaning:"스스로 자", reading:"じ"},
+                    {id:415, hanja:"次", meaning:"다음 차", reading:"じ"}, {id:416, hanja:"治", meaning:"다스릴 치", reading:"じ"},
+                    {id:417, hanja:"時", meaning:"때 시", reading:"じ"}, {id:418, hanja:"辞", meaning:"말씀 사", reading:"じ"},
+                    {id:419, hanja:"熱", meaning:"뜨거울 열", reading:"あつ(い)"}, {id:420, hanja:"厚", meaning:"두터울 후", reading:"あつ(い)"},
+                    {id:421, hanja:"暑", meaning:"더울 서", reading:"あつ(い)"}, {id:422, hanja:"篤", meaning:"독실 독", reading:"あつ(い)"},
+                    {id:423, hanja:"早", meaning:"이를 조", reading:"はや(い)"}, {id:424, hanja:"速", meaning:"빠를 속", reading:"はや(い)"},
+                    {id:425, hanja:"移", meaning:"옮길 이", reading:"うつ(る)"}, {id:426, hanja:"写", meaning:"베낄 사", reading:"うつ(る)"},
+                    {id:427, hanja:"映", meaning:"비칠 영", reading:"うつ(る)"}, {id:428, hanja:"内", meaning:"안 내", reading:"うち"},
+                    {id:429, hanja:"打", meaning:"칠 타", reading:"う(つ)"}, {id:430, hanja:"討", meaning:"토벌 토", reading:"う(つ)"}
+                ],
+                5: [ // Set 5: 실생활 혼동 (Common Mistakes)
+                    {id:501, hanja:"網", meaning:"그물 망", reading:"あみ"}, {id:502, hanja:"綱", meaning:"벼리 강", reading:"つな"},
+                    {id:503, hanja:"際", meaning:"즈음 제", reading:"さい"}, {id:504, hanja:"祭", meaning:"축제 제", reading:"まつ(り)"},
+                    {id:505, hanja:"済", meaning:"건널 제", reading:"す(む)"}, {id:506, hanja:"剤", meaning:"약제 제", reading:"ざい"},
+                    {id:507, hanja:"優", meaning:"뛰어날 우", reading:"やさ(しい)"}, {id:508, hanja:"易", meaning:"쉬울 이", reading:"やさ(しい)"},
+                    {id:509, hanja:"絶", meaning:"끊을 절", reading:"ぜつ"}, {id:510, hanja:"統", meaning:"거느릴 통", reading:"とう"},
+                    {id:511, hanja:"綿", meaning:"솜 면", reading:"めん"}, {id:512, hanja:"絹", meaning:"비단 견", reading:"きぬ"},
+                    {id:513, hanja:"線", meaning:"줄 선", reading:"せん"}, {id:514, hanja:"緑", meaning:"녹색 록", reading:"みどり"},
+                    {id:515, hanja:"練", meaning:"익힐 련", reading:"れん"}, {id:516, hanja:"緒", meaning:"실마리 서", reading:"しょ"},
+                    {id:517, hanja:"諸", meaning:"모두 제", reading:"しょ"}, {id:518, hanja:"署", meaning:"관청 서", reading:"しょ"},
+                    {id:519, hanja:"著", meaning:"저술 저", reading:"ちょ"}, {id:520, hanja:"着", meaning:"입을 착", reading:"き(る)"},
+                    {id:521, hanja:"基", meaning:"터 기", reading:"き"}, {id:522, hanja:"墓", meaning:"무덤 묘", reading:"はか"},
+                    {id:523, hanja:"幕", meaning:"막 막", reading:"まく"}, {id:524, hanja:"暮", meaning:"저물 모", reading:"く(れる)"},
+                    {id:525, hanja:"募", meaning:"모을 모", reading:"ぼ"}, {id:526, hanja:"慕", meaning:"그리울 모", reading:"ぼ"},
+                    {id:527, hanja:"券", meaning:"문서 권", reading:"けん"}, {id:528, hanja:"巻", meaning:"책 권", reading:"かん"},
+                    {id:529, hanja:"暴", meaning:"사나울 폭", reading:"ぼう"}, {id:530, hanja:"爆", meaning:"터질 폭", reading:"ばく"}
+                ]
+            };
+
+            var colMeaning = document.getElementById('wp-col-meaning');
+            var colHanja = document.getElementById('wp-col-hanja');
+            var pairsLeftEl = document.getElementById('wp-pairs-left');
+            var timerEl = document.getElementById('wp-timer');
+            var scoreEl = document.getElementById('wp-current-score');
+            var overlayArea = document.getElementById('wp-overlay-area');
+            var resetBtn = document.getElementById('wp-btn-reset');
+            var errorLog = document.getElementById('wp-error-log');
+            var setSelector = document.getElementById('wp-set-selector');
+
+            // 세트 버튼 이벤트 리스너
+            if(setSelector) {
+                setSelector.addEventListener('click', function(e) {
+                    if(e.target.classList.contains('btn-set')) {
+                        var selectedSet = parseInt(e.target.dataset.set);
+                        // 버튼 활성화 스타일 변경
+                        var buttons = setSelector.querySelectorAll('.btn-set');
+                        buttons.forEach(function(btn){ btn.classList.remove('active'); });
+                        e.target.classList.add('active');
+                        
+                        // 게임 시작
+                        currentSetId = selectedSet;
+                        initGame(currentSetId);
+                    }
+                });
+            }
+
+            if(resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    initGame(currentSetId);
+                });
+            }
+
+            function shuffle(array) {
+                for (var i = array.length - 1; i > 0; i--) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    var temp = array[i];
+                    array[i] = array[j];
+                    array[j] = temp;
+                }
+                return array;
+            }
+
+            function formatTime(sec) {
+                var m = Math.floor(sec / 60).toString().padStart(2, '0');
+                var s = (sec % 60).toString().padStart(2, '0');
+                return m + ':' + s;
+            }
+
+            function startTimer() {
+                stopTimer();
+                secondsElapsed = 0;
+                if(timerEl) timerEl.textContent = "00:00";
+                gameTimer = setInterval(function() {
+                    secondsElapsed++;
+                    if(timerEl) timerEl.textContent = formatTime(secondsElapsed);
+                }, 1000);
+            }
+
+            function stopTimer() {
+                if(gameTimer) clearInterval(gameTimer);
+            }
+
+            function initGame(setId) {
+                try {
+                    stopTimer();
+                    
+                    // 데이터 선택
+                    var selectedData = [];
+                    if(setId === 6) {
+                        // Set 6: 전체 믹스
+                        for(var key in sets) {
+                            selectedData = selectedData.concat(sets[key]);
+                        }
+                    } else {
+                        selectedData = sets[setId] ? sets[setId] : sets[1];
+                    }
+
+                    // 데이터 셔플 후 25개 추출
+                    var shuffledFull = shuffle(JSON.parse(JSON.stringify(selectedData)));
+                    
+                    // 데이터가 25개보다 적으면 있는 만큼만, 많으면 25개 자르기
+                    var sliceCount = shuffledFull.length < PAIRS_COUNT ? shuffledFull.length : PAIRS_COUNT;
+                    gameData = shuffledFull.slice(0, sliceCount);
+
+                    pairsLeft = sliceCount;
+                    currentScore = 0;
+                    selectedMeaning = null;
+                    selectedHanja = null;
+                    firstSelectionType = null;
+                    lastCorrectTime = Date.now();
+                    isStreakAlive = true;
+
+                    if(pairsLeftEl) pairsLeftEl.textContent = pairsLeft;
+                    if(scoreEl) scoreEl.textContent = currentScore;
+                    
+                    startTimer();
+                    renderBoard();
+                } catch(e) {
+                    if(errorLog) {
+                        errorLog.style.display = 'block';
+                        errorLog.textContent = "초기화 에러: " + e.message;
+                    }
+                }
+            }
+
+            function renderBoard() {
+                if(!colMeaning || !colHanja) return;
+
+                colMeaning.innerHTML = '';
+                colHanja.innerHTML = '';
+
+                var hanjaList = JSON.parse(JSON.stringify(gameData));
+                shuffle(hanjaList);
+                hanjaList.forEach(function(item) {
+                    var card = document.createElement('div');
+                    card.className = 'game-card hanja';
+                    card.textContent = item.hanja;
+                    card.dataset.id = item.id;
+                    card.dataset.type = 'hanja';
+                    card.addEventListener('click', handleCardClick);
+                    colHanja.appendChild(card);
+                });
+
+                var meaningList = JSON.parse(JSON.stringify(gameData));
+                shuffle(meaningList);
+                meaningList.forEach(function(item) {
+                    var card = document.createElement('div');
+                    card.className = 'game-card meaning-card';
+                    
+                    // 요미가나(reading)을 먼저 생성해서 위에 배치
+                    var yomiDiv = document.createElement('div');
+                    yomiDiv.className = 'yomi-text';
+                    yomiDiv.textContent = item.reading;
+
+                    var meaningSpan = document.createElement('span');
+                    meaningSpan.className = 'meaning-text'; 
+                    meaningSpan.textContent = item.meaning;
+                    
+                    // 요미가나 먼저, 뜻은 나중에 (위 -> 아래 순서)
+                    card.appendChild(yomiDiv);
+                    card.appendChild(meaningSpan);
+
+                    card.dataset.id = item.id;
+                    card.dataset.type = 'meaning';
+                    card.addEventListener('click', handleCardClick);
+                    colMeaning.appendChild(card);
+                });
+            }
+
+            function handleCardClick(e) {
+                var clickedCard = e.currentTarget;
+
+                if (clickedCard.classList.contains('matched') || clickedCard.classList.contains('selected')) {
+                    return;
+                }
+
+                var type = clickedCard.dataset.type;
+
+                if (!selectedMeaning && !selectedHanja) {
+                    firstSelectionType = type;
+                } 
+                else if ( (type === 'meaning' && selectedMeaning) || (type === 'hanja' && selectedHanja) ) {
+                    firstSelectionType = type;
+                }
+
+                if (type === 'meaning') {
+                    if (selectedMeaning) selectedMeaning.classList.remove('selected');
+                    selectedMeaning = clickedCard;
+                    selectedMeaning.classList.add('selected');
+                } else {
+                    if (selectedHanja) selectedHanja.classList.remove('selected');
+                    selectedHanja = clickedCard;
+                    selectedHanja.classList.add('selected');
+                }
+
+                if (selectedMeaning && selectedHanja) {
+                    checkMatch();
+                }
+            }
+
+            function checkMatch() {
+                var meaningId = selectedMeaning.dataset.id;
+                var hanjaId = selectedHanja.dataset.id;
+
+                if (meaningId === hanjaId) {
+                    handleCorrect();
+                } else {
+                    handleWrong();
+                }
+            }
+
+            function handleCorrect() {
+                var now = Date.now();
+                var timeDiff = now - lastCorrectTime;
+                
+                var pointsToAdd = 10;
+                var isCombo = false;
+
+                // [로직] 스트릭이 살아있고 + 5초 이내여야 보너스
+                if (isStreakAlive === true) {
+                    pointsToAdd += 5; // 기본 스트릭 보너스
+                    
+                    // 5초 룰 적용
+                    if (timeDiff < 5000) { 
+                        pointsToAdd += 5; // 스피드 보너스
+                        isCombo = true;
+                    }
+                } else {
+                    // 스트릭이 깨진 상태면 보너스 없음 (10점만)
+                    isCombo = false;
+                }
+
+                currentScore += pointsToAdd;
+                if(scoreEl) scoreEl.textContent = currentScore;
+                
+                lastCorrectTime = now;
+                // 정답 맞췄으니 다음엔 다시 기회 줌
+                isStreakAlive = true;
+
+                selectedMeaning.classList.remove('selected');
+                selectedHanja.classList.remove('selected');
+                
+                selectedMeaning.classList.add('matched');
+                selectedHanja.classList.add('matched');
+
+                // 10점 초과 시(보너스 있을 때)만 효과
+                if (pointsToAdd > 10) {
+                    showComboEffect("Combo! +" + pointsToAdd);
+                }
+
+                selectedMeaning = null;
+                selectedHanja = null;
+                firstSelectionType = null;
+
+                pairsLeft--;
+                if(pairsLeftEl) pairsLeftEl.textContent = pairsLeft;
+
+                if (pairsLeft === 0) {
+                    stopTimer();
+                    setTimeout(function() {
+                        alert('게임 종료! 최종 점수: ' + currentScore + ' / ' + MAX_SCORE);
+                    }, 300);
+                }
+            }
+
+            function handleWrong() {
+                // [로직] 틀리면 스트릭 깨짐
+                isStreakAlive = false;
+
+                var cardToShake = null;
+                if (firstSelectionType === 'hanja') {
+                    cardToShake = selectedMeaning;
+                } else if (firstSelectionType === 'meaning') {
+                    cardToShake = selectedHanja;
+                }
+
+                if (cardToShake) {
+                    cardToShake.classList.add('wrong');
+                } else {
+                    if(selectedMeaning) selectedMeaning.classList.add('wrong');
+                    if(selectedHanja) selectedHanja.classList.add('wrong');
+                }
+
+                var hintCard = null;
+                if (firstSelectionType === 'hanja' && selectedHanja) {
+                    hintCard = document.querySelector('#wp-col-meaning .game-card[data-id="' + selectedHanja.dataset.id + '"]');
+                } else if (firstSelectionType === 'meaning' && selectedMeaning) {
+                    hintCard = document.querySelector('#wp-col-hanja .game-card[data-id="' + selectedMeaning.dataset.id + '"]');
+                }
+
+                if (hintCard) {
+                    hintCard.classList.add('hint-highlight');
+                }
+
+                setTimeout(function() {
+                    if (selectedMeaning) {
+                        selectedMeaning.classList.remove('selected', 'wrong');
+                        selectedMeaning = null;
+                    }
+                    if (selectedHanja) {
+                        selectedHanja.classList.remove('selected', 'wrong');
+                        selectedHanja = null;
+                    }
+                    if (hintCard) {
+                        hintCard.classList.remove('hint-highlight');
+                    }
+                    firstSelectionType = null;
+                }, 800);
+            }
+
+            function showComboEffect(text) {
+                if(!overlayArea) return;
+                var msg = document.createElement('div');
+                msg.className = 'combo-msg';
+                msg.textContent = text;
+                overlayArea.appendChild(msg);
+
+                setTimeout(function() {
+                    msg.remove();
+                }, 1200);
+            }
+
+            // 안전하게 실행
+            setTimeout(function() { initGame(1); }, 300);
+
+        } catch (e) {
+            if(document.getElementById('wp-error-log')) {
+                document.getElementById('wp-error-log').style.display = 'block';
+                document.getElementById('wp-error-log').textContent = "실행 오류: " + e.message;
+            }
+        }
+    })();
+    </script>
+</body>
+</html>
