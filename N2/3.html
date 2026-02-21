@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JLPT N2 실전 문장 완성 게임</title>
+    
+    <style>
+        /* --- 뒤로가기 버튼 스타일 --- */
+        .back-link {
+            display: inline-block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #ef4444; 
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-family: 'Pretendard', sans-serif;
+            font-weight: bold;
+            transition: 0.3s;
+            text-align: center;
+        }
+        .back-link:hover { background-color: #b91c1c; transform: translateY(-2px); }
+        .top-bar { text-align: center; background-color: #fef2f2; padding-top: 10px; }
+
+        /* --- 기존 수훈님 CSS 코드 --- */
+        /* N2 3탄 최종: 점수 이펙트 추가 (Pop-up Score) */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700&family=Pretendard:wght@500;800&display=swap');
+
+        body { background-color: #fef2f2; margin: 0; padding: 0; }
+
+        .game-wrapper {
+            font-family: 'Pretendard', 'Noto Sans JP', sans-serif;
+            max-width: 800px;
+            margin: 0 auto 30px auto;
+            text-align: center;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border: 4px solid #ef4444;
+            overflow: hidden;
+            transition: height 0.3s;
+            position: relative; /* 팝업 위치 기준 */
+        }
+
+        /* 상단 탭 */
+        .stage-tabs {
+            display: flex;
+            background: #fef2f2;
+            border-bottom: 2px solid #ef4444;
+        }
+        .tab-btn {
+            flex: 1; padding: 15px; font-weight: 800; cursor: pointer;
+            color: #7f1d1d; font-size: 1.3rem; transition: 0.3s; border: none; background: transparent;
+        }
+        .tab-btn.active { background: #ef4444; color: white; }
+        .tab-btn:hover:not(.active) { background: #fee2e2; }
+
+        /* 정보창 */
+        .info-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 30px; background: #fff; border-bottom: 1px solid #fee2e2;
+            flex-wrap: wrap; gap: 15px;
+        }
+        .toggle-container { display: flex; align-items: center; gap: 10px; font-weight: bold; color: #555; font-size: 1.2rem; }
+        
+        .timer-display { 
+            font-family: 'Pretendard', sans-serif; font-weight: 900; color: #ef4444; 
+            padding: 8px 20px; border: 3px solid #ef4444; border-radius: 50px; 
+            min-width: 100px; display: inline-flex; justify-content: center; align-items: center; 
+            gap: 5px; font-size: 1.4rem; box-shadow: 0 4px 0 rgba(239, 68, 68, 0.2);
+        }
+
+        /* 우측 상태 그룹 (문제수 + 점수) */
+        .status-group {
+            display: flex; gap: 20px; align-items: center;
+        }
+        .status-text { font-size: 1.6rem; font-weight: 800; color: #991b1b; }
+
+        /* 스위치 UI */
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: "漢"; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; color: #555; font-family: 'Noto Sans JP'; }
+        input:checked + .slider { background-color: #10b981; } 
+        input:checked + .slider:before { transform: translateX(26px); content: "あ"; color: #10b981; }
+
+        /* 메인 게임 바디 */
+        .game-body { padding: 20px 30px 30px; position: relative; }
+
+        .progress-bar-container { width: 100%; height: 12px; background: #eee; border-radius: 6px; margin-bottom: 25px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #ef4444; width: 0%; transition: width 0.3s; }
+
+        /* 정답 슬롯 */
+        .answer-zone {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+            min-height: 120px; 
+            background: #fff1f2; border: 3px dashed #fca5a5; border-radius: 15px;
+            padding: 20px; margin-bottom: 20px; align-items: center;
+        }
+        .slot {
+            border-bottom: 3px solid #ccc; min-width: 90px; min-height: 80px; 
+            padding: 5px 15px; background: white; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s;
+        }
+        .slot.filled { border-bottom: 3px solid #ef4444; color: #ef4444; background-color: #fff; }
+
+        /* 루비 스타일 (큰 글씨) */
+        .ruby-box { display: flex; flex-direction: column; align-items: center; line-height: 1.2; }
+        .ruby-yomi { font-size: 1.2rem; color: #10b981; margin-bottom: 0px; font-weight: bold; }
+        .ruby-text { font-size: 2.2rem; font-weight: bold; }
+        
+        .word-btn .ruby-text { font-size: 2.0rem; } 
+        .word-btn .ruby-yomi { font-size: 1.1rem; }
+
+        /* 메시지 영역 */
+        .message-zone {
+            min-height: 100px; margin-bottom: 10px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            line-height: 1.4;
+        }
+        .hint-text { 
+            margin-top: 10px; color: #7f1d1d; font-size: 1.6rem; font-weight: 800;
+            background-color: #fef2f2; padding: 15px 30px; border-radius: 15px; word-break: keep-all;
+        }
+
+        /* 단어 버튼 (옵션 영역) */
+        .options-zone {
+            display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-content: center;
+            padding: 10px 0 20px;
+            min-height: 100px;
+        }
+        .word-btn {
+            padding: 10px 25px; min-height: 85px; 
+            background: white; color: #991b1b; border: 3px solid #991b1b; border-radius: 12px;
+            cursor: pointer; box-shadow: 0 4px 0 #7f1d1d; transition: transform 0.1s, box-shadow 0.1s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .word-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #7f1d1d; }
+        .word-btn.hidden { visibility: hidden; pointer-events: none; }
+
+        /* 컨트롤 버튼 */
+        .controls-zone { margin-top: 10px; display: flex; gap: 15px; justify-content: center; } 
+        .action-btn {
+            padding: 15px 40px; font-size: 1.5rem; font-weight: 800;
+            border: none; border-radius: 50px; cursor: pointer;
+            display: none; align-items: center; gap: 10px;
+            transition: 0.2s; box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        }
+        .btn-audio { background: #3b82f6; color: white; box-shadow: 0 4px 0 #1d4ed8; }
+        .btn-audio:hover { background: #2563eb; transform: translateY(-2px); }
+        .btn-next { background: #ef4444; color: white; box-shadow: 0 4px 0 #b91c1c; }
+        .btn-next:hover { background: #dc2626; transform: translateY(-2px); }
+
+        /* 점수 팝업 애니메이션 */
+        .score-popup {
+            position: absolute;
+            top: 40%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 900;
+            text-align: center;
+            pointer-events: none; /* 클릭 방해 금지 */
+            z-index: 100;
+            opacity: 0;
+            animation: popUpFloat 1.2s ease-out forwards;
+        }
+
+        @keyframes popUpFloat {
+            0% { opacity: 0; transform: translate(-50%, 0) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50px) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -150px) scale(1); }
+        }
+
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 
+            10%, 90% { transform: translate3d(-2px, 0, 0); } 
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 
+            40%, 60% { transform: translate3d(6px, 0, 0); } 
+        }
+
+        @media (max-width: 600px) {
+            .slot { min-width: 50px; padding: 2px 5px; min-height: 60px; }
+            .ruby-text { font-size: 1.6rem; }
+            .ruby-yomi { font-size: 0.9rem; }
+            .word-btn { padding: 5px 10px; min-height: 65px; }
+            .word-btn .ruby-text { font-size: 1.4rem; }
+            .info-header { padding: 10px; font-size: 0.9rem; justify-content: center; gap: 10px; }
+            .status-group { gap: 10px; width: 100%; justify-content: center; margin-top: 5px; }
+            .hint-text { font-size: 1.3rem; padding: 10px 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <a href="../index.html" class="back-link">🔙 메인 목록으로 돌아가기</a>
+    </div>
+
+    <div class="game-wrapper">
+        <div class="stage-tabs">
+            <button class="tab-btn active" onclick="setStage(1)">1단계 (기초 N2)</button>
+            <button class="tab-btn" onclick="setStage(2)">2단계 (응용 N2)</button>
+            <button class="tab-btn" onclick="setStage(3)">3단계 (실전 N2)</button>
+        </div>
+
+        <div class="info-header">
+            <div class="toggle-container">
+                <span>요미가나</span>
+                <label class="switch">
+                    <input type="checkbox" id="yomi-toggle" onchange="toggleYomigana()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="timer-display">0.00</div>
+            
+            <div class="status-group">
+                <div class="status-text">문제: <span id="q-current">1</span> / 10</div>
+                <div class="status-text" style="border-left: 2px solid #fee2e2; padding-left: 20px;">점수: <span id="current-score">0</span> / <span id="max-score">0</span></div>
+            </div>
+        </div>
+
+        <div class="game-body" id="game-body">
+            <div class="progress-bar-container"><div class="progress-fill" id="progress-bar"></div></div>
+
+            <div class="answer-zone" id="answer-zone"></div>
+
+            <div class="message-zone" id="message-box">
+                <span>게임을 시작합니다!</span>
+            </div>
+
+            <div class="options-zone" id="options-zone"></div>
+
+            <div class="controls-zone">
+                <button class="action-btn btn-audio" id="btn-audio" onclick="playTTS()">🔊 문장 듣기</button>
+                <button class="action-btn btn-next" id="btn-next" onclick="nextQuestion()">다음 문제 ➡</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- N2급 문장 데이터 40개 ---
+        const rawData = [
+            // [1단계] 기초 N2
+            { lvl: 1, ja: ["この", "薬を", "飲まざるを", "得ない"], yomi: ["この", "くすりを", "のまざるを", "えない"], ko: "이 약을 먹지 않을 수 없다 (〜ざるを得ない)" },
+            { lvl: 1, ja: ["合格", "した", "ことを", "知らなかった"], yomi: ["ごうかく", "した", "ことを", "しらなかった"], ko: "합격했다는 것을 몰랐다" },
+            { lvl: 1, ja: ["彼は", "医者", "というより", "学者だ"], yomi: ["かれは", "いしゃ", "というより", "がくしゃだ"], ko: "그는 의사라기보다는 학자다 (〜というより)" },
+            { lvl: 1, ja: ["雨が", "降って", "いる", "最中だ"], yomi: ["あめが", "ふって", "いる", "さいちゅうだ"], ko: "비가 내리고 있는 중이다 (〜最中だ)" },
+            { lvl: 1, ja: ["もっと", "早く", "来れば", "よかった"], yomi: ["もっと", "はやく", "くれば", "よかった"], ko: "좀 더 빨리 왔으면 좋았을 텐데" },
+            { lvl: 1, ja: ["日本へ", "留学", "する", "ことにした"], yomi: ["にほんへ", "りゅうがく", "する", "ことにした"], ko: "일본으로 유학하기로 했다 (〜ことにする)" },
+            { lvl: 1, ja: ["これは", "私に", "とって", "重要だ"], yomi: ["これは", "わたしに", "とって", "じゅうようだ"], ko: "이것은 나에게 있어서 중요하다 (〜にとって)" },
+            { lvl: 1, ja: ["あの", "人は", "来るに", "決まっている"], yomi: ["あの", "ひとは", "くるに", "きまっている"], ko: "저 사람은 올 게 뻔하다 (〜に決まっている)" },
+            { lvl: 1, ja: ["説明を", "聞いて", "からで", "ないと"], yomi: ["せつめいを", "きいて", "からで", "ないと"], ko: "설명을 듣고 나서가 아니면 (〜てからでないと)" },
+            { lvl: 1, ja: ["家族に", "対して", "優しく", "しなさい"], yomi: ["かぞくに", "たいして", "やさしく", "しなさい"], ko: "가족에 대해서 상냥하게 대하세요 (〜に対して)" },
+            { lvl: 1, ja: ["行く", "ついでに", "パンを", "買ってきて"], yomi: ["いく", "ついでに", "パンを", "かってきて"], ko: "가는 김에 빵을 사 와 (〜ついでに)" },
+            { lvl: 1, ja: ["漢字は", "書けば", "書くほど", "覚える"], yomi: ["かんじは", "かけば", "かくほど", "おぼえる"], ko: "한자는 쓰면 쓸수록 외워진다 (〜ば〜ほど)" },
+            { lvl: 1, ja: ["この", "際", "はっきり", "言っておく"], yomi: ["この", "さい", "はっきり", "いっておく"], ko: "이참에 확실히 말해둔다 (〜際)" },
+            { lvl: 1, ja: ["彼は", "病気", "気味", "です"], yomi: ["かれは", "びょうき", "ぎみ", "です"], ko: "그는 아픈 기색이 있습니다 (〜気味)" },
+
+            // [2단계] 응용 N2
+            { lvl: 2, ja: ["忙しい", "わりに", "給料が", "安い"], yomi: ["いそがしい", "わりに", "きゅうりょうが", "やすい"], ko: "바쁜 것에 비해 급여가 싸다 (〜わりに)" },
+            { lvl: 2, ja: ["子供", "じゃ", "あるまい", "し"], yomi: ["こども", "じゃ", "あるまい", "し"], ko: "어린애도 아니고 말이야 (〜じゃあるまいし)" },
+            { lvl: 2, ja: ["嬉しさの", "あまり", "泣いて", "しまった"], yomi: ["うれしさの", "あまり", "ないて", "しまった"], ko: "너무 기쁜 나머지 울어버렸다 (〜あまり)" },
+            { lvl: 2, ja: ["彼が", "犯人", "である", "はずがない"], yomi: ["かれが", "はんにん", "である", "はずがない"], ko: "그가 범인일 리가 없다 (〜はずがない)" },
+            { lvl: 2, ja: ["一度", "言った", "以上", "守るべきだ"], yomi: ["いちど", "いった", "いじょう", "まもるべきだ"], ko: "한번 말한 이상 지켜야 한다 (〜以上)" },
+            { lvl: 2, ja: ["考え", "ようと", "しない", "のですか"], yomi: ["かんがえ", "ようと", "しない", "のですか"], ko: "생각하려고 하지 않는 것입니까? (〜ようとする)" },
+            { lvl: 2, ja: ["休む", "ことなく", "働き", "続けた"], yomi: ["やすむ", "ことなく", "はたらき", "つづけた"], ko: "쉬는 일 없이 계속 일했다 (〜ことなく)" },
+            { lvl: 2, ja: ["会議は", "今から", "始まる", "ところだ"], yomi: ["かいぎは", "いまから", "はじまる", "ところだ"], ko: "회의는 지금부터 시작하려는 참이다 (〜ところだ)" },
+            { lvl: 2, ja: ["やる", "しかない", "と", "思う"], yomi: ["やる", "しかない", "と", "おもう"], ko: "할 수밖에 없다고 생각한다 (〜しかない)" },
+            { lvl: 2, ja: ["たとえ", "親", "でも", "許さない"], yomi: ["たとえ", "おや", "でも", "ゆるさない"], ko: "설령 부모라도 용서하지 않는다 (〜たとえ〜ても)" },
+            { lvl: 2, ja: ["知らない", "ふりを", "して", "いる"], yomi: ["しらない", "ふりを", "して", "いる"], ko: "모르는 척을 하고 있다 (〜ふりをする)" },
+            { lvl: 2, ja: ["時間さえ", "あれば", "できる", "のに"], yomi: ["じかんさえ", "あれば", "できる", "のに"], ko: "시간만 있으면 할 수 있는데 (〜さえ〜ば)" },
+            { lvl: 2, ja: ["食べ", "かけの", "パンが", "ある"], yomi: ["たべ", "かけの", "パンが", "ある"], ko: "먹다 만 빵이 있다 (〜かけ)" },
+            { lvl: 2, ja: ["山頂に", "向かって", "歩き", "出した"], yomi: ["さんちょうに", "むかって", "あるき", "だした"], ko: "산 정상을 향해 걷기 시작했다 (〜に向かって)" },
+
+            // [3단계] 실전 N2
+            { lvl: 3, ja: ["恐れ", "入りますが", "お名前を", "伺えますか"], yomi: ["おそれ", "いりますが", "おなまえを", "うかがえますか"], ko: "송구합니다만 성함을 여쭤봐도 될까요? (경어)" },
+            { lvl: 3, ja: ["あの", "店は", "安くて", "おいしい"], yomi: ["あの", "みせは", "やすくて", "おいしい"], ko: "저 가게는 싸고 맛있다 (단순하지만 긴 수식)" },
+            { lvl: 3, ja: ["優勝", "した", "なんて", "信じられない"], yomi: ["ゆうしょう", "した", "なんて", "しんじられない"], ko: "우승했다니 믿을 수 없다 (〜なんて)" },
+            { lvl: 3, ja: ["会って", "みて", "初めて", "わかった"], yomi: ["あって", "みて", "はじめて", "わかった"], ko: "만나보고서야 비로소 알았다 (〜てはじめて)" },
+            { lvl: 3, ja: ["新車", "どころか", "自転車も", "ない"], yomi: ["しんしゃ", "どころか", "じてんしゃも", "ない"], ko: "새 차는커녕 자전거도 없다 (〜どころか)" },
+            { lvl: 3, ja: ["調べた", "上で", "連絡", "します"], yomi: ["しらべた", "うえで", "れんらく", "します"], ko: "조사한 뒤에 연락하겠습니다 (〜た上で)" },
+            { lvl: 3, ja: ["帰ろうと", "した", "ところに", "電話が来た"], yomi: ["かえろうと", "した", "ところに", "でんわがきた"], ko: "돌아가려고 했던 참에 전화가 왔다 (〜としたところに)" },
+            { lvl: 3, ja: ["行ける", "ものなら", "行きたい", "ですね"], yomi: ["いける", "ものなら", "いきたい", "ですね"], ko: "갈 수만 있다면 가고 싶네요 (〜ものなら)" },
+            { lvl: 3, ja: ["買わ", "される", "ところ", "だった"], yomi: ["かわ", "される", "ところ", "だった"], ko: "강매당할(사게 될) 뻔했다 (사역수동 + ところだった)" },
+            { lvl: 3, ja: ["彼に", "任せれば", "安心", "だ"], yomi: ["かれに", "まかせれば", "あんしん", "だ"], ko: "그에게 맡기면 안심이다" },
+            { lvl: 3, ja: ["先生の", "おかげで", "合格", "できました"], yomi: ["せんせいの", "おかげで", "ごうかく", "できました"], ko: "선생님 덕분에 합격할 수 있었습니다" },
+            { lvl: 3, ja: ["誰に", "聞いても", "分から", "ない"], yomi: ["だれに", "きいても", "わから", "ない"], ko: "누구에게 물어도 알 수 없다" }
+        ];
+
+        // --- 게임 상태 변수 ---
+        let gameData = [];
+        let currentIndex = 0;
+        let currentScore = 0;
+        let maxPossibleScore = 0;
+        let combo = 0;
+        let currentStage = 1;
+        let questionStartTime = 0;
+        let timerInterval = null;
+        let isMistaken = false;
+        let step = 0;
+        let currentOptions = []; 
+        let isTimerRunning = false;
+
+        // --- 초기화 ---
+        function setStage(lvl) {
+            currentStage = lvl;
+            document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', idx + 1 === lvl);
+            });
+            initGame();
+        }
+
+        function initGame() {
+            // [버그 수정] 게임판(HTML)이 사라졌을 수 있으므로 강제로 복구합니다!
+            const gameBody = document.querySelector('.game-body');
+            gameBody.innerHTML = `
+                <div class="progress-bar-container"><div class="progress-fill" id="progress-bar"></div></div>
+                <div class="answer-zone" id="answer-zone"></div>
+                <div class="message-zone" id="message-box"><span>게임을 시작합니다!</span></div>
+                <div class="options-zone" id="options-zone"></div>
+                <div class="controls-zone">
+                    <button class="action-btn btn-audio" id="btn-audio" onclick="playTTS()">🔊 문장 듣기</button>
+                    <button class="action-btn btn-next" id="btn-next" onclick="nextQuestion()">다음 문제 ➡</button>
+                </div>
+            `;
+
+            const filtered = rawData.filter(d => d.lvl === currentStage);
+            gameData = [...filtered].sort(() => 0.5 - Math.random()).slice(0, 10);
+            
+            currentIndex = 0;
+            currentScore = 0;
+            combo = 0;
+            maxPossibleScore = 425; 
+
+            document.getElementById('current-score').textContent = "0";
+            document.getElementById('max-score').textContent = maxPossibleScore;
+            document.getElementById('yomi-toggle').checked = false; 
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            step = 0;
+            isMistaken = false;
+            isTimerRunning = false; 
+            stopTimer();
+            document.querySelector('.timer-display').textContent = "0.00";
+            document.getElementById('q-current').textContent = currentIndex + 1; 
+            
+            document.getElementById('answer-zone').innerHTML = '';
+            document.getElementById('answer-zone').classList.remove('shake');
+            
+            document.getElementById('options-zone').style.display = 'flex';
+            document.getElementById('options-zone').innerHTML = '';
+            
+            document.getElementById('btn-next').style.display = 'none';
+            document.getElementById('btn-audio').style.display = 'none';
+            
+            const pct = ((currentIndex) / 10) * 100;
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+
+            if (currentIndex >= 10) {
+                endGame();
+                return;
+            }
+
+            const curQ = gameData[currentIndex];
+            
+            document.getElementById('message-box').innerHTML = `
+                <div style="font-size:1.4rem; color:#555; margin-bottom:5px;">다음 문장을 만드세요:</div>
+                <div class="hint-text">
+                    ${curQ.ko}
+                </div>
+            `;
+            
+            const ansZone = document.getElementById('answer-zone');
+            curQ.ja.forEach((_, i) => {
+                let s = document.createElement('div');
+                s.className = 'slot';
+                s.id = `slot-${i}`;
+                ansZone.appendChild(s);
+            });
+
+            currentOptions = curQ.ja.map((txt, idx) => ({ 
+                text: txt, 
+                yomi: curQ.yomi[idx], 
+                id: idx 
+            })).sort(() => 0.5 - Math.random());
+            
+            renderOptions(true); 
+
+            if (currentIndex > 0) {
+                startTimer();
+            }
+        }
+
+        function getWordHTML(text, yomi) {
+            const isYomi = document.getElementById('yomi-toggle').checked;
+            if (isYomi) {
+                return `<div class="ruby-box"><span class="ruby-yomi">${yomi}</span><span class="ruby-text">${text}</span></div>`;
+            } else {
+                return `<span class="ruby-text">${text}</span>`;
+            }
+        }
+
+        function toggleYomigana() {
+            renderOptions(false);
+            const curQ = gameData[currentIndex];
+            for(let i=0; i<step; i++) {
+                const slot = document.getElementById(`slot-${i}`);
+                slot.innerHTML = getWordHTML(curQ.ja[i], curQ.yomi[i]);
+            }
+        }
+
+        function renderOptions(isReset = false) {
+            const optZone = document.getElementById('options-zone');
+            
+            const hiddenStatus = [];
+            if (!isReset) {
+                document.querySelectorAll('.word-btn').forEach(btn => {
+                    hiddenStatus.push(btn.classList.contains('hidden'));
+                });
+            }
+
+            optZone.innerHTML = '';
+            currentOptions.forEach((opt, idx) => {
+                let btn = document.createElement('div');
+                btn.className = 'word-btn';
+                btn.innerHTML = getWordHTML(opt.text, opt.yomi);
+                
+                if(!isReset && hiddenStatus.length > 0 && hiddenStatus[idx]) {
+                    btn.classList.add('hidden');
+                }
+
+                btn.onclick = () => handleInput(btn, opt, idx);
+                optZone.appendChild(btn);
+            });
+        }
+
+        function startTimer() {
+            if(isTimerRunning) return; 
+            
+            isTimerRunning = true;
+            questionStartTime = Date.now();
+            const display = document.querySelector('.timer-display');
+            
+            timerInterval = setInterval(() => {
+                const now = Date.now();
+                const diff = (now - questionStartTime) / 1000;
+                display.textContent = diff.toFixed(2);
+            }, 30);
+        }
+
+        function stopTimer() {
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+        }
+
+        function handleInput(btn, optObj, btnIdx) {
+            if(document.getElementById('btn-next').style.display === 'flex') return;
+
+            if (!isTimerRunning && currentIndex === 0) {
+                startTimer();
+            }
+
+            if (optObj.id === step) {
+                const curQ = gameData[currentIndex];
+                
+                const slot = document.getElementById(`slot-${step}`);
+                slot.innerHTML = getWordHTML(curQ.ja[step], curQ.yomi[step]);
+                slot.classList.add('filled');
+                
+                btn.classList.add('hidden');
+                step++;
+
+                if (step === 4) {
+                    stopTimer();
+                    calcScore();
+                    showSuccessUI();
+                }
+            } else {
+                handleMistake();
+            }
+        }
+
+        function handleMistake() {
+            const curQ = gameData[currentIndex];
+            const ansZone = document.getElementById('answer-zone');
+            ansZone.classList.remove('shake');
+            void ansZone.offsetWidth;
+            ansZone.classList.add('shake');
+
+            step = 0;
+            document.querySelectorAll('.slot').forEach(s => {
+                s.innerHTML = '';
+                s.classList.remove('filled');
+            });
+            
+            renderOptions(true); 
+
+            isMistaken = true;
+            combo = 0;
+
+            const msgBox = document.getElementById('message-box');
+            msgBox.innerHTML = `
+                <span style="color:#ef4444; font-size:2.0rem; font-weight:800;">⚠️ 틀렸습니다! (다시!)</span>
+                <div class="hint-text" style="font-size:1.6rem;">
+                    ${curQ.ko}
+                </div>
+            `;
+        }
+
+        // [핵심] 점수 계산 및 팝업 표시
+        function calcScore() {
+            const timeSpent = (Date.now() - questionStartTime) / 1000;
+            let points = 0;
+            let label = "";
+            let color = "#10b981"; // 기본 초록
+            let size = "3rem";
+
+            if (isMistaken) {
+                points = 10;
+                label = "+10";
+                color = "#555";
+            } else {
+                let base = 10;
+                let timeBonus = 0;
+                if (timeSpent <= 5.0) timeBonus = 10;
+                else if (timeSpent <= 12.0) timeBonus = 5;
+                
+                let comboBonus = combo * 5;
+                points = base + timeBonus + comboBonus;
+                combo++;
+
+                // 라벨 생성
+                label = `+${points}`;
+                if(combo > 1) {
+                    label += `<div style="font-size:1.5rem; margin-top:5px;">${combo} Combo!🔥</div>`;
+                    color = "#f59e0b"; // 콤보 시 골드
+                    size = "4rem";
+                } else if (timeBonus === 10) {
+                     label += `<div style="font-size:1.2rem; margin-top:5px;">Perfect!⚡</div>`;
+                     color = "#ef4444"; // 스피드 보너스 레드
+                }
+            }
+
+            currentScore += points;
+            document.getElementById('current-score').textContent = currentScore;
+            
+            // 팝업 띄우기
+            showScorePopup(label, color, size);
+        }
+
+        // 팝업 생성 함수
+        function showScorePopup(text, color, fontSize) {
+            const body = document.getElementById('game-body');
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.innerHTML = text;
+            popup.style.color = color;
+            popup.style.fontSize = fontSize;
+            popup.style.textShadow = `2px 2px 0px white, 0 0 10px ${color}`;
+            
+            body.appendChild(popup);
+            
+            // 애니메이션 후 삭제
+            setTimeout(() => {
+                popup.remove();
+            }, 1200);
+        }
+
+        function showSuccessUI() {
+            const curQ = gameData[currentIndex];
+            const msgBox = document.getElementById('message-box');
+
+            document.getElementById('options-zone').style.display = 'none';
+            
+            const fullSentence = curQ.ja.map((txt, i) => 
+                `<div class="ruby-box" style="margin:0 4px;">
+                    <span class="ruby-yomi" style="font-size:1.3rem;">${curQ.yomi[i]}</span>
+                    <span class="ruby-text" style="font-size:2.5rem;">${txt}</span>
+                </div>`
+            ).join('');
+
+            let comboMsg = combo > 1 ? ` <span style="color:#f59e0b; font-size:1.6rem;">(${combo} Combo!)</span>` : "";
+            
+            msgBox.innerHTML = `
+                <span style="color:#10b981; font-size:2.2rem; margin-bottom:10px; font-weight:900;">🎉 정답입니다!</span>
+                <div style="display:flex; flex-wrap:wrap; justify-content:center;">${fullSentence}</div>
+                <div class="hint-text" style="color:#333; background:#f0fdf4; margin-top:10px; font-size:1.8rem;">${curQ.ko}</div>
+            `;
+
+            document.getElementById('btn-next').style.display = 'flex';
+            document.getElementById('btn-audio').style.display = 'flex';
+        }
+
+        function playTTS() {
+            const curQ = gameData[currentIndex];
+            const fullJa = curQ.ja.join('');
+            
+            if ('speechSynthesis' in window) {
+                const utter = new SpeechSynthesisUtterance(fullJa);
+                utter.lang = 'ja-JP';
+                utter.rate = 0.9;
+                window.speechSynthesis.speak(utter);
+            } else {
+                alert("이 브라우저는 음성 재생을 지원하지 않습니다.");
+            }
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            loadQuestion();
+        }
+
+        function endGame() {
+            const wrapper = document.querySelector('.game-body');
+            let color = currentScore >= (maxPossibleScore * 0.8) ? '#10b981' : '#ef4444';
+            
+            wrapper.innerHTML = `
+                <h2 style="font-size:3.5rem; color:${color}; margin-bottom:10px;">Game Clear!</h2>
+                <p style="font-size:2rem; margin-bottom:20px;">
+                    최종 점수: <strong style="font-size:4rem; color:${color};">${currentScore}</strong> / ${maxPossibleScore}
+                </p>
+                <p style="color:#555; font-size:1.5rem;">단계별로 계속 도전해서 만점을 노려보세요!</p>
+                <button class="action-btn btn-next" style="display:inline-flex; margin-top:30px; font-size:1.6rem;" onclick="initGame()">다시 도전하기</button>
+            `;
+        }
+
+        window.onload = () => setStage(1);
+    </script>
+</body>
+</html>
